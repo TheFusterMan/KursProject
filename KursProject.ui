@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>KursProjectClass</class>
+ <widget class="QMainWindow" name="KursProjectClass">
+  <property name="enabled">
+   <bool>true</bool>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>600</width>
+    <height>400</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>KursProject</string>
+  </property>
+  <widget class="QWidget" name="centralWidget"/>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>600</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu">
+    <property name="title">
+     <string>Выбрать</string>
+    </property>
+    <addaction name="actionClients"/>
+    <addaction name="actionConsultation"/>
+    <addaction name="separator"/>
+    <addaction name="actionConsultationForClients"/>
+   </widget>
+   <widget class="QMenu" name="menu_2">
+    <property name="title">
+     <string>Редактировать</string>
+    </property>
+    <addaction name="actionAddRecord"/>
+    <addaction name="actionRemoveRecord"/>
+    <addaction name="separator"/>
+    <addaction name="actionLoadAndSave"/>
+   </widget>
+   <addaction name="menu"/>
+   <addaction name="menu_2"/>
+  </widget>
+  <action name="actionClients">
+   <property name="text">
+    <string>Справочник Клиенты</string>
+   </property>
+  </action>
+  <action name="actionConsultation">
+   <property name="text">
+    <string>Справочник Консультации</string>
+   </property>
+  </action>
+  <action name="actionConsultationForClients">
+   <property name="text">
+    <string>Отчет Консультации для клиентов</string>
+   </property>
+  </action>
+  <action name="actionAddRecord">
+   <property name="text">
+    <string>Добавить запись</string>
+   </property>
+  </action>
+  <action name="actionRemoveRecord">
+   <property name="text">
+    <string>Удалить запись</string>
+   </property>
+  </action>
+  <action name="actionLoadAndSave">
+   <property name="text">
+    <string>Загрузить и сохранить</string>
+   </property>
+  </action>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <resources>
+  <include location="KursProject.qrc"/>
+ </resources>
+ <connections/>
+</ui>
