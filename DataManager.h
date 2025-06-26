@@ -348,6 +348,9 @@ private:
 
     static bool deleteClient(const QString& inn, const QString& fio, const QString& phone)
     {
+        // ... вся начальная валидация и поиск клиента остаются без изменений ...
+        // ... (код до блока "НАЧАЛО ИЗМЕНЕНИЙ")
+
         // 1. Валидация входных данных
         if (!validator.validateINN(inn) || !validator.validateFIO(fio) || !validator.validatePhone(phone)) {
             qWarning() << "Invalid data format for deletion.";
@@ -360,15 +363,11 @@ private:
             qWarning() << "INN conversion to number failed:" << inn;
             return false;
         }
-        // Приводим ключ к типу int, как того требует ваша хеш-таблица
         int innToDelete_int = static_cast<int>(innToDelete_q64);
 
-
         // 2. Ищем клиента по ИНН в хеш-таблице
-        // Ваш метод search возвращает const Item*, что отлично подходит для поиска.
         const Item* itemToDelete = clients_table.search(innToDelete_int);
 
-        // Если search вернул nullptr, значит ключ не найден
         if (itemToDelete == nullptr) {
             qInfo() << "Client with INN" << inn << "not found. Deletion failed.";
             return false;
@@ -376,7 +375,6 @@ private:
 
         int indexToDelete = itemToDelete->index;
 
-        // Проверка на валидность индекса из хеш-таблицы
         if (indexToDelete < 0 || indexToDelete >= clients_array.size()) {
             qWarning() << "Hash table contains an invalid index" << indexToDelete << "for INN" << inn;
             return false;
@@ -392,68 +390,83 @@ private:
             return false;
         }
 
-        // --- ПОЛНОЕ СОВПАДЕНИЕ НАЙДЕНО. НАЧИНАЕМ ЭФФЕКТИВНОЕ УДАЛЕНИЕ ---
+        // --- ОБНОВЛЕННАЯ ЛОГИКА УДАЛЕНИЯ СВЯЗАННЫХ КОНСУЛЬТАЦИЙ ---
 
+        int consultationsRemovedCount = 0;
+        // Цикл будет работать, пока для данного ИНН находятся консультации
+        while (true) {
+            QVector<int> indices = findConsultationIndicesByINN(innToDelete_q64);
+            if (indices.isEmpty()) {
+                // Консультаций для этого клиента больше нет, выходим из цикла
+                break;
+            }
+            // Удаляем первую найденную консультацию. На следующей итерации
+            // find... вернет обновленный список.
+            deleteConsultation(indices.first());
+            consultationsRemovedCount++;
+        }
+
+        if (consultationsRemovedCount > 0) {
+            qInfo() << "Удалено" << consultationsRemovedCount << "связанных консультаций для клиента с ИНН" << inn;
+        }
+
+        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+
+        // --- Удаление самого клиента (этот блок остается без изменений) ---
         int lastIndex = clients_array.size() - 1;
-
-        // 4. Случай, когда удаляемый элемент - НЕ последний в массиве
         if (indexToDelete < lastIndex) {
-            // Берем последний элемент из массива
             const Client& lastClient = clients_array.last();
             int lastClientInn_int = static_cast<int>(lastClient.inn);
-
-            // Перемещаем его на место удаляемого элемента
             clients_array[indexToDelete] = lastClient;
-
-            // Обновляем индекс перемещенного элемента в хеш-таблице
             if (!clients_table.updateIndex(lastClientInn_int, indexToDelete)) {
-                // Эта ошибка критична - она говорит о рассинхронизации данных
                 qCritical() << "CRITICAL: Inconsistency! Could not update index for client with INN"
                     << lastClient.inn << " in the hash table.";
-                // В этом случае лучше не продолжать, чтобы не повредить данные еще больше
                 return false;
             }
         }
-        // Если удаляемый элемент и так последний, этот блок пропускается, что корректно.
-
-        // 5. Удаляем (помечаем) запись из хеш-таблицы
         clients_table.remove(innToDelete_int);
-
-        // 6. Удаляем последний элемент из массива (быстрая операция O(1))
         clients_array.removeLast();
-
         qInfo() << "Client with INN" << inn << "successfully deleted.";
         return true;
     }
     static bool deleteConsultation(int indexInArray)
     {
+        // Проверка на корректность индекса
         if (indexInArray < 0 || indexInArray >= consultations_array.size()) {
             qWarning() << "Попытка удаления консультации по неверному индексу:" << indexInArray;
             return false;
         }
 
+        // Сохраняем ключ удаляемого элемента для последующего удаления из дерева
         const Consultation& toDelete = consultations_array.at(indexInArray);
         quint64 keyToDelete = toDelete.client_inn;
 
         int lastIndex = consultations_array.size() - 1;
 
         // Используем эффективный метод удаления из вектора (swap-and-pop)
+        // Если удаляемый элемент не является последним
         if (indexInArray < lastIndex) {
+            // 1. Получаем последний элемент
             const Consultation& lastElement = consultations_array.last();
-            // Перемещаем последний элемент на место удаляемого
+
+            // 2. Перемещаем его на место удаляемого
             consultations_array[indexInArray] = lastElement;
 
-            // Обновляем дерево для ПЕРЕМЕЩЕННОГО элемента:
-            // 1. Удаляем его старый индекс
+            // 3. Обновляем АВЛ-дерево для ПЕРЕМЕЩЕННОГО элемента:
+            //    а) Удаляем его старый индекс (lastIndex)
             consultations_tree.remove(lastElement.client_inn, lastIndex);
-            // 2. Добавляем его новый индекс
+            //    б) Добавляем его новый индекс (indexInArray)
             consultations_tree.add(lastElement.client_inn, indexInArray);
         }
 
-        // Удаляем последний элемент из массива
+        // 4. Удаляем последний элемент из массива (быстрая операция)
+        //    Если мы были в if, это копия элемента, который мы переместили.
+        //    Если indexInArray == lastIndex, это и есть удаляемый элемент.
         consultations_array.removeLast();
 
-        // Теперь удаляем из дерева ИНДЕКС исходного удаляемого элемента
+        // 5. Теперь удаляем из дерева ИНДЕКС исходного (удаляемого) элемента.
+        //    Это нужно делать после всех манипуляций с массивом, чтобы
+        //    не удалить не тот узел по ошибке.
         consultations_tree.remove(keyToDelete, indexInArray);
 
         return true;
