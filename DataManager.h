@@ -10,6 +10,15 @@
 #include <QVector>
 
 struct Date {
+    Date() = default;
+
+    Date(QString textParts) {
+        QStringList dateParts = textParts.split('.');
+        day = dateParts[0].toInt();
+        month = dateParts[1].toInt();
+        year = dateParts[2].toInt();
+    }
+
     int day;
     int month;
     int year;
@@ -103,7 +112,6 @@ public:
     }
 
     static bool validateFIO(const QString& fio) {
-        // Original: "ФИО должно состоять из трех слов на русском языке, с заглавной буквы каждое, разделенных пробелом."
         static const QRegularExpression fioRegex(QStringLiteral("^[А-ЯЁ][а-яё]+ [А-ЯЁ][а-яё]+ [А-ЯЁ][а-яё]+$"));
         if (!fioRegex.match(fio).hasMatch()) {
             return false;
@@ -112,8 +120,6 @@ public:
     }
 
     static bool validatePhone(const QString& phone) {
-        // Телефон должен состоять из 11 цифр и начинаться с "89".
-        // u8 здесь не обязателен, т.к. нет не-ASCII символов, но для единообразия полезен.
         static const QRegularExpression phoneRegex(u8"^89\\d{9}$");
         if (!phoneRegex.match(phone).hasMatch()) {
             return false;
@@ -121,26 +127,38 @@ public:
         return true;
     }
 
-    static bool validateDate(int day, int month, int year) {
-        if (year < 1970 || year > 2038) {
+    static bool validateDate(const QString& date) {
+        QStringList dateParts = date.trimmed().split('.');
+        Date dateToValidate;
+        bool isDayOk, isMonthOk, isYearOk;
+        if (dateParts.size() == 3) {
+            dateToValidate.day = dateParts[0].toInt(&isDayOk);
+            dateToValidate.month = dateParts[1].toInt(&isMonthOk);
+            dateToValidate.year = dateParts[2].toInt(&isYearOk);
+
+            if (!(isDayOk && isMonthOk && isYearOk)) return false;
+        }
+
+        if (dateToValidate.year < 1970 || dateToValidate.year > 2038) {
             return false;
         }
-        if (month < 1 || month > 12) {
+        if (dateToValidate.month < 1 || dateToValidate.month > 12) {
             return false;
         }
 
         int max_days = 31;
-        if (month == 4 || month == 6 || month == 9 || month == 11) {
+        if (dateToValidate.month == 4 || dateToValidate.month == 6 || dateToValidate.month == 9 || dateToValidate.month == 11) {
             max_days = 30;
         }
-        else if (month == 2) {
-            bool isLeap = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+        else if (dateToValidate.month == 2) {
+            bool isLeap = (dateToValidate.year % 4 == 0 && dateToValidate.year % 100 != 0) || (dateToValidate.year % 400 == 0);
             max_days = isLeap ? 29 : 28;
         }
 
-        if (day < 1 || day > max_days) {
+        if (dateToValidate.day < 1 || dateToValidate.day > max_days) {
             return false;
         }
+
         return true;
     }
 };
@@ -182,11 +200,11 @@ private:
                 client.fio.i = fioParts[1];
                 client.fio.o = fioParts[2];
                 clients_array.append(client);
-                clients_table.add(client.inn, index); // <-- РАСКОММЕНТИРОВАНО и исправлено
+                clients_table.add(client.inn, index);
                 index++;
             }
             else {
-                qWarning() << "Incorrect line format in clients file:" << line; // Original: "Некорректный формат строки в файле клиентов:"
+                qWarning() << "Incorrect line format in clients file:" << line;
             }
         }
 
@@ -199,11 +217,9 @@ private:
     {
         QFile file(filename);
         if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            qWarning() << "Не удалось открыть файл с консультациями:" << filename;
             return false;
         }
 
-        // Полная очистка перед загрузкой
         consultations_array.clear();
         consultations_tree.freeTree(consultations_tree.root);
 
@@ -213,49 +229,26 @@ private:
             QString line = in.readLine();
             QStringList parts = line.split(';');
 
-            if (parts.size() == 4) {
-                bool inn_ok, lawyer_fio_ok, date_ok;
+            if (parts.size() == 4 && validator.validateINN(parts[0].trimmed()) && validator.validateFIO(parts[2].trimmed()) && validator.validateDate(parts[3].trimmed())) {
+                Date date (parts[3].trimmed());
 
-                // 1. Валидация ИНН
-                quint64 client_inn = parts[0].toULongLong(&inn_ok);
-                inn_ok = inn_ok && validator.validateINN(parts[0]);
+                Consultation consultation;
+                consultation.client_inn = parts[0].toULongLong();
+                consultation.topic = parts[1].trimmed();
+                consultation.lawyer_fio = FIO(parts[2].trimmed());
+                consultation.date = date;
 
-                // 2. Валидация ФИО юриста
-                QString lawyer_fio_str = parts[2].trimmed();
-                lawyer_fio_ok = validator.validateFIO(lawyer_fio_str);
-
-                // 3. Валидация даты
-                QStringList dateParts = parts[3].trimmed().split('.');
-                Date date;
-                if (dateParts.size() == 3) {
-                    date.day = dateParts[0].toInt();
-                    date.month = dateParts[1].toInt();
-                    date.year = dateParts[2].toInt();
-                    date_ok = validator.validateDate(date.day, date.month, date.year);
-                }
-                else {
-                    date_ok = false;
-                }
-
-                if (inn_ok && lawyer_fio_ok && date_ok) {
-                    Consultation consultation;
-                    consultation.client_inn = client_inn;
-                    consultation.topic = parts[1].trimmed();
-                    consultation.lawyer_fio = FIO(lawyer_fio_str);
-                    consultation.date = date;
-
-                    // Добавляем в массив и в дерево
+                if (findClientByINN(consultation.client_inn) != nullptr) {
                     consultations_array.append(consultation);
-                    bool h = false;
-                    consultations_tree.insert(consultations_tree.root, consultation.client_inn, index, h);
+                    consultations_tree.add(consultation.client_inn, index);
                     index++;
                 }
                 else {
-                    qWarning() << "Некорректный формат строки в файле консультаций:" << line;
+                    qWarning() << "Не существует клиента с таким ИНН:" << line;
                 }
             }
             else {
-                qWarning() << "Некорректное количество полей в строке файла консультаций:" << line;
+                qWarning() << "Некорректное количество полей в строке файла консультаций или некорректный формат строки в файле консультаций:" << line;
             }
         }
         file.close();
@@ -314,15 +307,15 @@ private:
 
     static bool addClient(const QString& inn, const QString& fio, const QString& phone) {
         if (validator.validateINN(inn) && validator.validateFIO(fio) && validator.validatePhone(phone)) {
-            quint64 validatedINN = inn.toULongLong();
-            FIO validatedFIO (fio);
-            quint64 validatedPhone = phone.toULongLong();
+            quint64 validINN = inn.toULongLong();
+            FIO validFIO (fio);
+            quint64 validPhone = phone.toULongLong();
 
-            if (clients_table.add(validatedINN, clients_array.length() - 1)) {
+            if (clients_table.add(validINN, clients_array.length() - 1)) {
                 clients_array.append({
-                    validatedINN,
-                    validatedFIO,
-                    validatedPhone
+                    validINN,
+                    validFIO,
+                    validPhone
                     });
 
                 return true;
@@ -331,18 +324,26 @@ private:
         return false;
     }
 
-    static bool addConsultation(const Consultation& consultation)
+    static bool addConsultation(const QString& inn, const QString& fio, const QString& theame, const QString& date)
     {
-        // Проверяем, существует ли клиент с таким ИНН
-        if (findClientByINN(consultation.client_inn) == nullptr) {
-            qWarning() << "Попытка добавить консультацию для несуществующего клиента с ИНН:" << consultation.client_inn;
-            return false;
+        if (validator.validateINN(inn) && validator.validateFIO(fio) /*&& validator.validateTheme(theame)*/ && validator.validateDate(date)) {
+            Date validDate (date);
+            quint64 validINN = inn.toULongLong();
+            FIO validFIO(fio);
+
+            if (findClientByINN(validINN) == nullptr) {
+                qWarning() << "Попытка добавить консультацию для несуществующего клиента с ИНН:" << validINN;
+                return false;
+            }
+
+            int newIndex = consultations_array.size();
+            consultations_array.append({ validINN, theame, validFIO, validDate });
+            consultations_tree.add(validINN, newIndex);
+
+            return true;
         }
 
-        int newIndex = consultations_array.size();
-        consultations_array.append(consultation);
-        consultations_tree.add(consultation.client_inn, newIndex);
-        return true;
+        return false;
     }
 
     static bool deleteClient(const QString& inn, const QString& fio, const QString& phone)

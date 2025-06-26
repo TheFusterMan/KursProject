@@ -1,5 +1,6 @@
 ﻿    #include "mainwindow.h"
     #include "AddClientDialog.h"
+    #include "AddConsultationDialog.h"
     #include "DeleteClientDialog.h"
     #include "DataManager.h"
 
@@ -239,45 +240,40 @@
     }
     void MainWindow::onAddConsultationRecord()
     {
-        // Здесь нужен будет новый диалог AddConsultationDialog, но для простоты пока можно использовать QInputDialog
-        bool ok;
-        QString innStr = QInputDialog::getText(this, "Добавление консультации", "Введите ИНН клиента:", QLineEdit::Normal, "", &ok);
-        if (!ok || !Validator::validateINN(innStr)) {
-            QMessageBox::warning(this, "Ошибка", "Некорректный ИНН клиента.");
-            return;
-        }
+        AddConsultationDialog dialog(this);
 
-        // Проверяем, есть ли такой клиент
-        if (DataManager::findClientByINN(innStr.toULongLong()) == nullptr) {
-            QMessageBox::warning(this, "Ошибка", "Клиент с таким ИНН не найден в справочнике.");
-            return;
-        }
+        if (dialog.exec() == QDialog::Accepted)
+        {
+            QString INN = dialog.getINN();
+            QString Date = dialog.getDate();
+            QString FIO = dialog.getFIO();
+            QString Theame = dialog.getTheame();
 
-        // Запрашиваем остальные данные
-        QString topic = QInputDialog::getText(this, "Добавление консультации", "Тема:", QLineEdit::Normal, "", &ok);
-        if (!ok || topic.isEmpty()) return;
-        QString lawyer_fio = QInputDialog::getText(this, "Добавление консультации", "ФИО юриста (Фамилия Имя Отчество):", QLineEdit::Normal, "", &ok);
-        if (!ok || !Validator::validateFIO(lawyer_fio)) {
-            QMessageBox::warning(this, "Ошибка", "Некорректное ФИО юриста.");
-            return;
-        }
-        // Дату для простоты сделаем сегодняшней
-        QDate qdate = QDate::currentDate();
-        Date date = { qdate.day(), qdate.month(), qdate.year() };
+            if (DataManager::addConsultation(INN, FIO, Theame, Date))
+            {
+                // --- НАЧАЛО ИЗМЕНЕНИЙ ---
 
+                // 1. Получаем текущее количество строк. Это будет индекс для новой строки.
+                int newRowIndex = salesTable->rowCount();
 
-        Consultation newConsultation;
-        newConsultation.client_inn = innStr.toULongLong();
-        newConsultation.topic = topic;
-        newConsultation.lawyer_fio = FIO(lawyer_fio);
-        newConsultation.date = date;
+                // 2. Вставляем новую пустую строку в конец таблицы.
+                salesTable->insertRow(newRowIndex);
 
-        if (DataManager::addConsultation(newConsultation)) {
-            updateConsultationsTable();
-            QMessageBox::information(this, "Успех", "Консультация успешно добавлена.");
-        }
-        else {
-            QMessageBox::warning(this, "Ошибка", "Не удалось добавить консультацию.");
+                // 3. Создаем и заполняем ячейки для новой строки.
+                salesTable->setItem(newRowIndex, 0, new QTableWidgetItem(INN));
+                salesTable->setItem(newRowIndex, 1, new QTableWidgetItem(Theame));
+                salesTable->setItem(newRowIndex, 2, new QTableWidgetItem(FIO));
+                salesTable->setItem(newRowIndex, 3, new QTableWidgetItem(Date));
+
+                // Сообщение пользователю оставляем
+                QMessageBox::information(this, u8"Успех", u8"Запись успешно добавлена!");
+
+                // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+            }
+            else
+            {
+                QMessageBox::warning(this, u8"Ошибка", u8"Не удалось добавить запись! Проверьте корректность данных.");
+            }
         }
     }
 
@@ -336,26 +332,12 @@
     }
     
     void MainWindow::onLoadClients() {
-        // 1. Открываем диалог для выбора файла.
-        // Мы просим пользователя выбрать текстовый файл для загрузки.
-        QString fileName = QFileDialog::getOpenFileName(this,
-            u8"Загрузить справочник клиентов", // Заголовок окна
-            "",                                // Стартовая директория (текущая)
-            u8"Текстовые файлы (*.txt);;Все файлы (*.*)"); // Фильтр файлов
+        QString fileName = QFileDialog::getOpenFileName(this, u8"Загрузить справочник клиентов", "", u8"Текстовые файлы (*.txt);;Все файлы (*.*)");
 
-        // 2. Проверяем, выбрал ли пользователь файл.
-        // Если он нажал "Отмена", fileName будет пустым.
-        if (fileName.isEmpty()) {
-            return; // Ничего не делаем, если пользователь отменил выбор
-        }
+        if (fileName.isEmpty()) return;
 
-        // 3. Пытаемся загрузить данные из выбранного файла через DataManager.
-        if (DataManager::loadClientsFromFile(fileName))
-        {
-            // 4. Если загрузка прошла успешно, обновляем нашу таблицу в интерфейсе.
+        if (DataManager::loadClientsFromFile(fileName)) {
             updateClientsTable();
-
-            // 5. Сообщаем пользователю об успехе.
             QMessageBox::information(this, u8"Успех", u8"Данные клиентов успешно загружены.");
         }
         else
@@ -368,15 +350,18 @@
     }
     void MainWindow::onLoadConsultations()
     {
-        QString fileName = QFileDialog::getOpenFileName(this, "Загрузить справочник консультаций", "", "Текстовые файлы (*.txt);;Все файлы (*.*)");
+        QString fileName = QFileDialog::getOpenFileName(this, u8"Загрузить справочник консультаций", "", u8"Текстовые файлы (*.txt);;Все файлы (*.*)");
+
         if (fileName.isEmpty()) return;
 
         if (DataManager::loadConsultationsFromFile(fileName)) {
             updateConsultationsTable();
-            QMessageBox::information(this, "Успех", "Данные консультаций успешно загружены.");
+            QMessageBox::information(this, u8"Успех", u8"Данные консультаций успешно загружены.");
         }
         else {
-            QMessageBox::warning(this, "Ошибка загрузки", "Не удалось загрузить данные из файла.");
+            QMessageBox::warning(this, u8"Ошибка загрузки",
+                u8"Не удалось загрузить данные из файла.\n"
+                u8"Пожалуйста, проверьте, что файл существует и имеет корректный формат.");
         }
     }
     

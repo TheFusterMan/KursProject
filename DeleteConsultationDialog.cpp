@@ -1,13 +1,14 @@
-﻿#include "AddClientDialog.h"
+﻿#include "DeleteConsultationDialog.h"
 #include <QLabel>
 #include <QLineEdit>
-#include <QFormLayout> // Идеально подходит для форм "метка: поле"
+#include <QFormLayout>
 #include <QVBoxLayout>
 #include <QDialogButtonBox>
 
-AddClientDialog::AddClientDialog(QWidget* parent) : QDialog(parent)
+DeleteConsultationDialog::DeleteConsultationDialog(QWidget* parent) : QDialog(parent)
 {
-    setWindowTitle(u8"Добавить клиента");
+    // Устанавливаем заголовок, соответствующий действию
+    setWindowTitle(u8"Удалить клиента");
 
     // Создаем поля для ввода
     innEdit = new QLineEdit(this);
@@ -20,8 +21,8 @@ AddClientDialog::AddClientDialog(QWidget* parent) : QDialog(parent)
     buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
 
     // Соединяем сигналы кнопок со стандартными слотами QDialog
-    connect(buttonBox, &QDialogButtonBox::accepted, this, &AddClientDialog::accept);
-    connect(buttonBox, &QDialogButtonBox::rejected, this, &AddClientDialog::reject);
+    connect(buttonBox, &QDialogButtonBox::accepted, this, &DeleteConsultationDialog::accept);
+    connect(buttonBox, &QDialogButtonBox::rejected, this, &DeleteConsultationDialog::reject);
 
     // Используем QFormLayout для удобного расположения полей и меток
     QFormLayout* formLayout = new QFormLayout;
@@ -40,14 +41,15 @@ AddClientDialog::AddClientDialog(QWidget* parent) : QDialog(parent)
     setLayout(mainLayout);
 }
 
-QString AddClientDialog::getINN() const {
-    return innEdit->text();
+QString DeleteConsultationDialog::getINN() const {
+    return innEdit->text().trimmed();
 }
 
-QString AddClientDialog::getFIO() const {
-    return nameEdit->text() + " " + surnameEdit->text() + " " + patronymicEdit->text();
+QString DeleteConsultationDialog::getFIO() const {
+    // Собираем ФИО из трех полей
+    return nameEdit->text().trimmed() + " " + surnameEdit->text().trimmed() + " " + patronymicEdit->text().trimmed();
 }
 
-QString AddClientDialog::getPhone() const {
-    return phoneEdit->text();
+QString DeleteConsultationDialog::getPhone() const {
+    return phoneEdit->text().trimmed();
 }
