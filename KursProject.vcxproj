@@ -95,6 +95,7 @@
     <QtRcc Include="KursProject.qrc" />
     <QtMoc Include="mainwindow.h" />
     <ClCompile Include="AddClientDialog.cpp" />
+    <ClCompile Include="DeleteClientDialog.cpp" />
     <ClCompile Include="mainwindow.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
@@ -102,11 +103,15 @@
     <ClInclude Include="AVLTree.h" />
     <ClInclude Include="DataManager.h" />
     <QtMoc Include="AddClientDialog.h" />
+    <QtMoc Include="DeleteClientDialog.h" />
     <ClInclude Include="HashTable.h" />
     <ClInclude Include="LinkedList.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="D:\Загрузки\logo.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="clients.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

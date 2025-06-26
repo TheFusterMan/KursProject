@@ -33,6 +33,9 @@
     <Filter Include="Resource Files\Icons">
       <UniqueIdentifier>{7aff3063-d827-4f0e-8195-91f049f61925}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\Input/Output">
+      <UniqueIdentifier>{ec401a84-da71-4202-98b7-9a790dc94a15}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <QtRcc Include="KursProject.qrc">
@@ -50,6 +53,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="AddClientDialog.cpp">
+      <Filter>Source Files\Forms</Filter>
+    </ClCompile>
+    <ClCompile Include="DeleteClientDialog.cpp">
       <Filter>Source Files\Forms</Filter>
     </ClCompile>
   </ItemGroup>
@@ -71,10 +77,18 @@
     <QtMoc Include="AddClientDialog.h">
       <Filter>Header Files\Forms</Filter>
     </QtMoc>
+    <QtMoc Include="DeleteClientDialog.h">
+      <Filter>Header Files\Forms</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <Image Include="D:\Загрузки\logo.png">
       <Filter>Resource Files\Icons</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="clients.txt">
+      <Filter>Resource Files\Input/Output</Filter>
+    </Text>
   </ItemGroup>
 </Project>

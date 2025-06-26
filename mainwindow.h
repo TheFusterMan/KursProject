@@ -20,10 +20,10 @@ public:
 
 private slots:
     // Slots for actions
-    void onAddRecord();
-    void onDeleteRecord();
-    void onLoad();
-    void onSave();
+    void onAddClientRecord();
+    void onDeleteClientRecord();
+    void onLoadClients();
+    void onSaveClients();
     void onDebug();
     void onFind();
     void onAbout();
@@ -47,11 +47,10 @@ private:
     QMenu* helpMenu;
 
     // Actions
-    QAction* displayAction;
     QAction* addAction;
     QAction* deleteAction;
-    QAction* loadAction;
-    QAction* saveAction;
+    QAction* loadClientsAction;
+    QAction* saveClientsAction;
     QAction* debugAction;
     QAction* findAction;
     QAction* exitAction;

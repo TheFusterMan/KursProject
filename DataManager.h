@@ -294,6 +294,86 @@ public:
         return false;
     }
 
+    static bool deleteClient(const QString& inn, const QString& fio, const QString& phone)
+    {
+        // 1. Валидация входных данных
+        if (!validator.validateINN(inn) || !validator.validateFIO(fio) || !validator.validatePhone(phone)) {
+            qWarning() << "Invalid data format for deletion.";
+            return false;
+        }
+
+        bool ok;
+        quint64 innToDelete_q64 = inn.toULongLong(&ok);
+        if (!ok) {
+            qWarning() << "INN conversion to number failed:" << inn;
+            return false;
+        }
+        // Приводим ключ к типу int, как того требует ваша хеш-таблица
+        int innToDelete_int = static_cast<int>(innToDelete_q64);
+
+
+        // 2. Ищем клиента по ИНН в хеш-таблице
+        // Ваш метод search возвращает const Item*, что отлично подходит для поиска.
+        const Item* itemToDelete = clients_table.search(innToDelete_int);
+
+        // Если search вернул nullptr, значит ключ не найден
+        if (itemToDelete == nullptr) {
+            qInfo() << "Client with INN" << inn << "not found. Deletion failed.";
+            return false;
+        }
+
+        int indexToDelete = itemToDelete->index;
+
+        // Проверка на валидность индекса из хеш-таблицы
+        if (indexToDelete < 0 || indexToDelete >= clients_array.size()) {
+            qWarning() << "Hash table contains an invalid index" << indexToDelete << "for INN" << inn;
+            return false;
+        }
+
+        // 3. Сверяем остальные данные (ФИО, телефон) для полного совпадения
+        const Client& clientInArray = clients_array.at(indexToDelete);
+        FIO fioFromInput(fio);
+        quint64 phoneFromInput = phone.toULongLong();
+
+        if (clientInArray.fio.toString() != fioFromInput.toString() || clientInArray.phone != phoneFromInput) {
+            qInfo() << "Client with INN" << inn << "found, but FIO/phone do not match. Deletion aborted.";
+            return false;
+        }
+
+        // --- ПОЛНОЕ СОВПАДЕНИЕ НАЙДЕНО. НАЧИНАЕМ ЭФФЕКТИВНОЕ УДАЛЕНИЕ ---
+
+        int lastIndex = clients_array.size() - 1;
+
+        // 4. Случай, когда удаляемый элемент - НЕ последний в массиве
+        if (indexToDelete < lastIndex) {
+            // Берем последний элемент из массива
+            const Client& lastClient = clients_array.last();
+            int lastClientInn_int = static_cast<int>(lastClient.inn);
+
+            // Перемещаем его на место удаляемого элемента
+            clients_array[indexToDelete] = lastClient;
+
+            // Обновляем индекс перемещенного элемента в хеш-таблице
+            if (!clients_table.updateIndex(lastClientInn_int, indexToDelete)) {
+                // Эта ошибка критична - она говорит о рассинхронизации данных
+                qCritical() << "CRITICAL: Inconsistency! Could not update index for client with INN"
+                    << lastClient.inn << " in the hash table.";
+                // В этом случае лучше не продолжать, чтобы не повредить данные еще больше
+                return false;
+            }
+        }
+        // Если удаляемый элемент и так последний, этот блок пропускается, что корректно.
+
+        // 5. Удаляем (помечаем) запись из хеш-таблицы
+        clients_table.remove(innToDelete_int);
+
+        // 6. Удаляем последний элемент из массива (быстрая операция O(1))
+        clients_array.removeLast();
+
+        qInfo() << "Client with INN" << inn << "successfully deleted.";
+        return true;
+    }
+
     static const QVector<Client>& getClients() 
     {
         return clients_array;
@@ -306,15 +386,30 @@ public:
 
     static const Client* findClientByINN(quint64 inn)
     {
-        // 1. Ищем в хеш-таблице. Она возвращает индекс в массиве clients_array.
-        int index = clients_table.search(inn)->index;
+        // 1. Приводим ключ к типу int, который использует ваша хеш-таблица
+        int inn_int = static_cast<int>(inn);
 
-        // 2. Если индекс валидный (не -1), возвращаем указатель на клиента в массиве.
-        if (index != -1 && index < clients_array.size()) {
-            return &clients_array[index];
+        // 2. Ищем в хеш-таблице. Метод search вернет указатель на Item или nullptr.
+        const Item* foundItem = clients_table.search(inn_int);
+
+        // 3. Проверяем результат поиска
+        if (foundItem != nullptr) { // Убеждаемся, что указатель не нулевой (т.е. клиент найден)
+            int index = foundItem->index;
+
+            // 4. Проверяем валидность индекса, полученного из хеш-таблицы
+            if (index >= 0 && index < clients_array.size()) {
+                // Индекс валиден, возвращаем указатель на клиента в массиве
+                return &clients_array[index];
+            }
+            else {
+                // Ошибка: в хеш-таблице хранится "мусорный" индекс.
+                // Этого не должно происходить в исправной системе.
+                qWarning() << "Inconsistency found: HashTable returned invalid index" << index << "for INN" << inn;
+                return nullptr;
+            }
         }
 
-        // 3. Если ничего не найдено, возвращаем nullptr.
+        // 5. Если search вернул nullptr, значит клиент не найден.
         return nullptr;
     }
 };

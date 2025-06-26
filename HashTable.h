@@ -112,7 +112,7 @@ public:
 		return false;
 	}
 
-	bool remove(const int& key, string subject, string date) {
+	bool remove(const int& key) {
 		int index = primaryHash(key);
 		int attempt = 0;
 
@@ -135,6 +135,30 @@ public:
 		}
 
 		return false;
+	}
+
+	bool updateIndex(const int& key, int new_index) {
+		int initIndex = primaryHash(key);
+		int attempt = 0;
+
+		while (attempt < capacity) {
+			int probedIndex = secondaryHash(initIndex, attempt);
+
+			// Если наткнулись на пустую ячейку, значит ключа в таблице нет
+			if (table[probedIndex].status == 0) {
+				return false;
+			}
+
+			// Если нашли ячейку с нужным ключом
+			if (table[probedIndex].status == 1 && table[probedIndex].key == key) {
+				table[probedIndex].index = new_index; // Обновляем индекс
+				return true; // Успех
+			}
+
+			attempt++;
+		}
+
+		return false; // Ключ не найден после полного прохода
 	}
 
 	void resize(bool isExpands) {
