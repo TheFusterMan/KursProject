@@ -28,6 +28,9 @@ private slots:
     void onFind();
     void onAbout();
 
+    void showClientContextMenu(const QPoint& pos);
+    void showConsultationContextMenu(const QPoint& pos);
+
     void onAddConsultationRecord();
     void onDeleteConsultationRecord();
     void onLoadConsultations();

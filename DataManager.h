@@ -425,7 +425,6 @@ private:
         qInfo() << "Client with INN" << inn << "successfully deleted.";
         return true;
     }
-
     static bool deleteConsultation(int indexInArray)
     {
         if (indexInArray < 0 || indexInArray >= consultations_array.size()) {
@@ -459,7 +458,6 @@ private:
 
         return true;
     }
-
 
     static const QVector<Client>& getClients() 
     {

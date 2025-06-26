@@ -20,6 +20,7 @@
     #include <QInputDialog>
     #include <QFileDialog>
     #include <QIcon>
+    #include <QPoint>
 
     MainWindow::MainWindow(QWidget* parent)
         : QMainWindow(parent)  
@@ -58,9 +59,6 @@
         QWidget* directoriesTab = new QWidget();
         QHBoxLayout* directoriesLayout = new QHBoxLayout(directoriesTab);
 
-        // Левая таблица (Справочник продавцов, из "ХТ")
-        // Примечание: на скриншоте "ХТ" и "ДЕРЕВО" находятся внутри таблиц, а не в заголовках.
-        // Пока что мы используем их как текст-заполнитель.
         sellersTable = new QTableWidget(this); // Создаем таблицу
         sellersTable->setColumnCount(3);       // Устанавливаем 3 колонки: ИНН, ФИО, Телефон
 
@@ -72,6 +70,10 @@
         sellersTable->setEditTriggers(QAbstractItemView::NoEditTriggers); // Запрещаем редактирование ячеек
         sellersTable->setSelectionBehavior(QAbstractItemView::SelectRows); // Выделение строк целиком
         sellersTable->verticalHeader()->setVisible(false); // Скрываем нумерацию строк слева
+
+        // <<< ИЗМЕНЕНИЕ 1: ВКЛЮЧАЕМ КОНТЕКСТНОЕ МЕНЮ И ПОДКЛЮЧАЕМ СИГНАЛ >>>
+        sellersTable->setContextMenuPolicy(Qt::CustomContextMenu);
+        connect(sellersTable, &QTableWidget::customContextMenuRequested, this, &MainWindow::showClientContextMenu);
 
         // Правая таблица (Справочник консультаций, из "ДЕРЕВО")
         salesTable = new QTableWidget(this); // Создаем таблицу
@@ -85,6 +87,9 @@
         salesTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
         salesTable->setSelectionBehavior(QAbstractItemView::SelectRows);
         salesTable->verticalHeader()->setVisible(false);
+
+        salesTable->setContextMenuPolicy(Qt::CustomContextMenu);
+        connect(salesTable, &QTableWidget::customContextMenuRequested, this, &MainWindow::showConsultationContextMenu);
 
         // Добавляем обе таблицы в горизонтальный слой
         directoriesLayout->addWidget(sellersTable);
@@ -201,6 +206,81 @@
     }
 
     // Реализации слотов
+    void MainWindow::showClientContextMenu(const QPoint& pos)
+    {
+        // Получаем индекс элемента, на который кликнули
+        QTableWidgetItem* item = sellersTable->itemAt(pos);
+        if (!item) {
+            return; // Клик был на пустом месте, ничего не делаем
+        }
+        int row = item->row();
+
+        // Создаем меню
+        QMenu contextMenu(this);
+        QAction* deleteAction = contextMenu.addAction(QIcon::fromTheme("edit-delete"), u8"Удалить клиента");
+
+        // Соединяем сигнал от действия "Удалить" с лямбда-функцией, которая выполнит удаление
+        connect(deleteAction, &QAction::triggered, [this, row]() {
+            // Запрашиваем подтверждение
+            QMessageBox::StandardButton reply;
+            reply = QMessageBox::question(this, u8"Подтверждение удаления",
+                u8"Вы уверены, что хотите удалить этого клиента?\n"
+                u8"Все связанные с ним консультации также будут удалены.",
+                QMessageBox::Yes | QMessageBox::No);
+
+            if (reply == QMessageBox::Yes) {
+                // Получаем данные прямо из строки таблицы для удаления
+                QString inn = sellersTable->item(row, 0)->text();
+                QString fio = sellersTable->item(row, 1)->text();
+                QString phone = sellersTable->item(row, 2)->text();
+
+                if (DataManager::deleteClient(inn, fio, phone)) {
+                    // Если DataManager удаляет и связанные консультации,
+                    // нужно обновить обе таблицы
+                    updateClientsTable();
+                    updateConsultationsTable();
+                    QMessageBox::information(this, u8"Успех", u8"Клиент успешно удален.");
+                }
+                else {
+                    QMessageBox::warning(this, u8"Ошибка", u8"Не удалось удалить клиента.");
+                }
+            }
+            });
+
+        // Показываем меню в месте, где был сделан клик
+        // mapToGlobal переводит координаты из системы виджета в глобальные экранные
+        contextMenu.exec(sellersTable->mapToGlobal(pos));
+    }
+    void MainWindow::showConsultationContextMenu(const QPoint& pos)
+    {
+        QTableWidgetItem* item = salesTable->itemAt(pos);
+        if (!item) {
+            return;
+        }
+        int row = item->row();
+
+        QMenu contextMenu(this);
+        QAction* deleteAction = contextMenu.addAction(QIcon::fromTheme("edit-delete"), u8"Удалить консультацию");
+
+        connect(deleteAction, &QAction::triggered, [this, row]() {
+            QMessageBox::StandardButton reply;
+            reply = QMessageBox::question(this, u8"Подтверждение удаления", u8"Вы уверены, что хотите удалить эту консультацию?",
+                QMessageBox::Yes | QMessageBox::No);
+
+            if (reply == QMessageBox::Yes) {
+                // DataManager::deleteConsultation уже принимает индекс строки, что идеально нам подходит
+                if (DataManager::deleteConsultation(row)) {
+                    updateConsultationsTable();
+                    QMessageBox::information(this, u8"Успех", u8"Запись успешно удалена.");
+                }
+                else {
+                    QMessageBox::critical(this, u8"Ошибка", u8"Произошла ошибка при удалении записи.");
+                }
+            }
+            });
+
+        contextMenu.exec(salesTable->mapToGlobal(pos));
+    }
 
     void MainWindow::onAddClientRecord()
     {
