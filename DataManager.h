@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <HashTable.h>
+#include <AVLTree.h>
 
 #include <QString>
 #include <stdexcept>
@@ -66,6 +67,14 @@ struct Consultation {
     QString topic;
     FIO lawyer_fio;
     Date date;
+
+    QString toFileLine() const {
+        return QString("%1;%2;%3;%4")
+            .arg(client_inn)
+            .arg(topic)
+            .arg(lawyer_fio.toString())
+            .arg(date.toString());
+    }
 };
 
 struct FilterCriteria
@@ -142,8 +151,11 @@ private:
 
     inline static HashTable clients_table {16};
     inline static QVector<Client> clients_array;
+    
+    inline static AVLTree consultations_tree;
     inline static QVector<Consultation> consultations_array;
-public:
+
+    public:
     static bool loadClientsFromFile(const QString& filename)
     {
         QFile file(filename);
@@ -185,63 +197,70 @@ public:
 
     static bool loadConsultationsFromFile(const QString& filename)
     {
-        //QFile file(filename);
-        //if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        //    qWarning() << "Failed to open consultations file:" << filename; // Original: "Не удалось открыть файл с консультациями:"
-        //    return false;
-        //}
+        QFile file(filename);
+        if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            qWarning() << "Не удалось открыть файл с консультациями:" << filename;
+            return false;
+        }
 
-        //consultations_array.clear();
+        // Полная очистка перед загрузкой
+        consultations_array.clear();
+        consultations_tree.freeTree(consultations_tree.root);
 
-        //QTextStream in(&file);
+        QTextStream in(&file);
+        int index = 0;
+        while (!in.atEnd()) {
+            QString line = in.readLine();
+            QStringList parts = line.split(';');
 
-        //while (!in.atEnd()) {
-        //    QString line = in.readLine();
-        //    QStringList parts = line.split(';');
+            if (parts.size() == 4) {
+                bool inn_ok, lawyer_fio_ok, date_ok;
 
-        //    if (parts.size() == 4) {
-        //        Consultation consultation;
-        //        consultation.client_inn = parts[0].trimmed();
-        //        consultation.topic = parts[1].trimmed();
+                // 1. Валидация ИНН
+                quint64 client_inn = parts[0].toULongLong(&inn_ok);
+                inn_ok = inn_ok && validator.validateINN(parts[0]);
 
-        //        QStringList lawyerFioParts = parts[2].trimmed().split(' ');
-        //        if (lawyerFioParts.size() == 3) {
-        //            consultation.lawyer_fio.f = lawyerFioParts[0];
-        //            consultation.lawyer_fio.i = lawyerFioParts[1];
-        //            consultation.lawyer_fio.o = lawyerFioParts[2];
-        //        }
-        //        else {
-        //            qWarning() << "Incorrect lawyer FIO format in consultations file line:" << line;
-        //            continue; // Skip this line if FIO is malformed
-        //        }
+                // 2. Валидация ФИО юриста
+                QString lawyer_fio_str = parts[2].trimmed();
+                lawyer_fio_ok = validator.validateFIO(lawyer_fio_str);
 
+                // 3. Валидация даты
+                QStringList dateParts = parts[3].trimmed().split('.');
+                Date date;
+                if (dateParts.size() == 3) {
+                    date.day = dateParts[0].toInt();
+                    date.month = dateParts[1].toInt();
+                    date.year = dateParts[2].toInt();
+                    date_ok = validator.validateDate(date.day, date.month, date.year);
+                }
+                else {
+                    date_ok = false;
+                }
 
-        //        QString dateString = parts[3].trimmed();
-        //        QStringList dateParts = dateString.split('.');
-        //        if (dateParts.size() == 3) {
-        //            consultation.date.day = dateParts[0].toInt();
-        //            consultation.date.month = dateParts[1].toInt();
-        //            consultation.date.year = dateParts[2].toInt();
+                if (inn_ok && lawyer_fio_ok && date_ok) {
+                    Consultation consultation;
+                    consultation.client_inn = client_inn;
+                    consultation.topic = parts[1].trimmed();
+                    consultation.lawyer_fio = FIO(lawyer_fio_str);
+                    consultation.date = date;
 
-        //            try {
-        //                Validator::validateDate(consultation.date.day, consultation.date.month, consultation.date.year);
-        //                consultations_array.append(consultation);
-        //            }
-        //            catch (const std::invalid_argument& e) {
-        //                qWarning() << "Invalid date in consultations file line:" << line << "Error:" << e.what();
-        //            }
-        //        }
-        //        else {
-        //            qWarning() << "Incorrect date format in consultations file line:" << line;
-        //        }
-        //    }
-        //    else {
-        //        qWarning() << "Incorrect line format in consultations file:" << line; // Original: "Некорректный формат строки в файле консультаций:"
-        //    }
-        //}
-
-        //file.close();
-        //return true;
+                    // Добавляем в массив и в дерево
+                    consultations_array.append(consultation);
+                    bool h = false;
+                    consultations_tree.insert(consultations_tree.root, consultation.client_inn, index, h);
+                    index++;
+                }
+                else {
+                    qWarning() << "Некорректный формат строки в файле консультаций:" << line;
+                }
+            }
+            else {
+                qWarning() << "Некорректное количество полей в строке файла консультаций:" << line;
+            }
+        }
+        file.close();
+        qInfo() << "Загружено" << consultations_array.size() << "консультаций.";
+        return true;
     }
 
     static bool saveClientsToFile(const QString& filename)
@@ -275,6 +294,24 @@ public:
         return true;
     }
 
+    static bool saveConsultationsToFile(const QString& filename)
+    {
+        QFile file(filename);
+        if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+            qWarning() << "Не удалось открыть файл для записи консультаций:" << filename;
+            return false;
+        }
+
+        QTextStream out(&file);
+        for (const Consultation& consultation : consultations_array) {
+            out << consultation.toFileLine() << "\n";
+        }
+
+        file.close();
+        qInfo() << "Сохранено" << consultations_array.size() << "консультаций в файл" << filename;
+        return true;
+    }
+
     static bool addClient(const QString& inn, const QString& fio, const QString& phone) {
         if (validator.validateINN(inn) && validator.validateFIO(fio) && validator.validatePhone(phone)) {
             quint64 validatedINN = inn.toULongLong();
@@ -292,6 +329,20 @@ public:
             }
         }
         return false;
+    }
+
+    static bool addConsultation(const Consultation& consultation)
+    {
+        // Проверяем, существует ли клиент с таким ИНН
+        if (findClientByINN(consultation.client_inn) == nullptr) {
+            qWarning() << "Попытка добавить консультацию для несуществующего клиента с ИНН:" << consultation.client_inn;
+            return false;
+        }
+
+        int newIndex = consultations_array.size();
+        consultations_array.append(consultation);
+        consultations_tree.add(consultation.client_inn, newIndex);
+        return true;
     }
 
     static bool deleteClient(const QString& inn, const QString& fio, const QString& phone)
@@ -374,12 +425,47 @@ public:
         return true;
     }
 
+    static bool deleteConsultation(int indexInArray)
+    {
+        if (indexInArray < 0 || indexInArray >= consultations_array.size()) {
+            qWarning() << "Попытка удаления консультации по неверному индексу:" << indexInArray;
+            return false;
+        }
+
+        const Consultation& toDelete = consultations_array.at(indexInArray);
+        quint64 keyToDelete = toDelete.client_inn;
+
+        int lastIndex = consultations_array.size() - 1;
+
+        // Используем эффективный метод удаления из вектора (swap-and-pop)
+        if (indexInArray < lastIndex) {
+            const Consultation& lastElement = consultations_array.last();
+            // Перемещаем последний элемент на место удаляемого
+            consultations_array[indexInArray] = lastElement;
+
+            // Обновляем дерево для ПЕРЕМЕЩЕННОГО элемента:
+            // 1. Удаляем его старый индекс
+            consultations_tree.remove(lastElement.client_inn, lastIndex);
+            // 2. Добавляем его новый индекс
+            consultations_tree.add(lastElement.client_inn, indexInArray);
+        }
+
+        // Удаляем последний элемент из массива
+        consultations_array.removeLast();
+
+        // Теперь удаляем из дерева ИНДЕКС исходного удаляемого элемента
+        consultations_tree.remove(keyToDelete, indexInArray);
+
+        return true;
+    }
+
+
     static const QVector<Client>& getClients() 
     {
         return clients_array;
     }
 
-    const QVector<Consultation>& getConsultations() const
+    static const QVector<Consultation>& getConsultations() 
     {
         return consultations_array;
     }
@@ -411,5 +497,19 @@ public:
 
         // 5. Если search вернул nullptr, значит клиент не найден.
         return nullptr;
+    }
+
+    static QVector<int> findConsultationIndicesByINN(quint64 inn)
+    {
+        QVector<int> indices;
+        TreeNode* node = consultations_tree.find(inn);
+        if (node) {
+            ListNode* current = node->head;
+            while (current) {
+                indices.append(current->data);
+                current = current->next;
+            }
+        }
+        return indices;
     }
 };

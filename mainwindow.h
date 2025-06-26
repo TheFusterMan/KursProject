@@ -28,6 +28,11 @@ private slots:
     void onFind();
     void onAbout();
 
+    void onAddConsultationRecord();
+    void onDeleteConsultationRecord();
+    void onLoadConsultations();
+    void onSaveConsultations();
+    void onFindConsultations();
 private:
     // UI setup methods
     void setupUi();
@@ -35,6 +40,7 @@ private:
     void createMenus();
 
     void updateClientsTable();
+    void updateConsultationsTable();
 
     // Widget pointers
     QTabWidget* mainTabWidget;
@@ -55,6 +61,12 @@ private:
     QAction* findAction;
     QAction* exitAction;
     QAction* aboutAction;
+
+    QAction* addConsultationAction;
+    QAction* deleteConsultationAction;
+    QAction* loadConsultationsAction;
+    QAction* saveConsultationsAction;
+    QAction* findConsultationsAction;
 }; // <-- The crucial semicolon
 
 #endif // MAINWINDOW_H
