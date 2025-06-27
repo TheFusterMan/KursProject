@@ -1,5 +1,6 @@
-#include <iostream> // To interact with users
+﻿#include <iostream> // To interact with users
 #include <string> // Strings are sometimes
+#include "DebugLogger.h"
 
 using namespace std;
 
@@ -28,6 +29,12 @@ public:
 	HashTable(int initCapHint) : INIT_CAPACITY(initCapHint), size(0) {
 		capacity = INIT_CAPACITY;
 		table = new Item[capacity];
+		DebugLogger::log(QString("HashTable: Инициализирована с capacity = %1").arg(capacity));
+	}
+
+	~HashTable() {
+		delete[] table;
+		DebugLogger::log("HashTable: Уничтожена.");
 	}
 
 	unsigned long long keyToNum(const int& key) const {
@@ -63,6 +70,8 @@ public:
 		int potentialIndex = -1;
 		int attempt = 0;
 
+		DebugLogger::log(QString("HashTable ADD: Попытка добавить ключ %1 (индекс %2). Начальный хеш: %3").arg(key).arg(index).arg(initIndex));
+
 		while (attempt < capacity) {
 			int probedIndex = secondaryHash(initIndex, attempt);
 
@@ -71,6 +80,8 @@ public:
 				table[probedIndex].index = index;
 				table[probedIndex].status = 1;
 				size += 1;
+
+				DebugLogger::log(QString("HashTable ADD: Ключ %1 добавлен в ячейку %2").arg(key).arg(probedIndex));
 
 				if (static_cast<double>(size) / capacity >= MAX_FILL_FACTOR) {
 					resize(true);
@@ -82,7 +93,7 @@ public:
 				if (potentialIndex == -1) potentialIndex = probedIndex;
 			}
 			else if (table[probedIndex].status == 1 && table[probedIndex].key == key) {
-				cout << "Warning: int (" << key << ") already exists. Record will not be added." << endl;
+				DebugLogger::log(QString("HashTable WARNING: Ключ %1 уже существует. Добавление отменено.").arg(key));
 
 				return false;
 			}
@@ -103,8 +114,8 @@ public:
 			return true;
 		}
 		else {
-			cout << "Warning: Could not find a slot to add key (" << key << "). Table expansion required.\n";
-			// Can be removed if you really don't want to insert keys
+			DebugLogger::log(QString("HashTable ERROR: Не удалось найти место для ключа %1. Таблица заполнена?").arg(key));
+
 			resize(true);
 			add(key, index);
 		}
@@ -115,14 +126,19 @@ public:
 	bool remove(const int& key) {
 		int index = primaryHash(key);
 		int attempt = 0;
+		DebugLogger::log(QString("HashTable REMOVE: Попытка удалить ключ %1.").arg(key));
 
 		while (attempt < capacity) {
 			int probedIndex = secondaryHash(index, attempt);
 
-			if (table[probedIndex].status == 0) return false;
+			if (table[probedIndex].status == 0) {
+				DebugLogger::log(QString("HashTable REMOVE: Ключ %1 не найден (пустая ячейка).").arg(key));
+				return false;
+			}
 			else if (table[probedIndex].status == 1 && table[probedIndex].key == key) {
 				table[probedIndex].status = 2;
 				size -= 1;
+				DebugLogger::log(QString("HashTable REMOVE: Ключ %1 удален (помечен как 'deleted').").arg(key));
 
 				if (capacity > INIT_CAPACITY && static_cast<double>(size) / capacity <= MIN_FILL_FACTOR) {
 					resize(false);
@@ -133,32 +149,35 @@ public:
 
 			attempt += 1;
 		}
-
+		DebugLogger::log(QString("HashTable REMOVE: Ключ %1 не найден после полного сканирования.").arg(key));
 		return false;
 	}
 
 	bool updateIndex(const int& key, int new_index) {
 		int initIndex = primaryHash(key);
 		int attempt = 0;
+		DebugLogger::log(QString("HashTable UPDATE: Поиск ключа %1 для обновления индекса на %2.").arg(key).arg(new_index));
 
 		while (attempt < capacity) {
 			int probedIndex = secondaryHash(initIndex, attempt);
 
-			// ���� ���������� �� ������ ������, ������ ����� � ������� ���
+			// Если наткнулись на пустую ячейку, значит ключа в таблице нет
 			if (table[probedIndex].status == 0) {
+				DebugLogger::log(QString("HashTable UPDATE: Ключ %1 не найден.").arg(key));
 				return false;
 			}
 
-			// ���� ����� ������ � ������ ������
+			// Если нашли ячейку с нужным ключом
 			if (table[probedIndex].status == 1 && table[probedIndex].key == key) {
-				table[probedIndex].index = new_index; // ��������� ������
-				return true; // �����
+				table[probedIndex].index = new_index; // Обновляем индекс
+				DebugLogger::log(QString("HashTable UPDATE: Индекс для ключа %1 успешно обновлен на %2.").arg(key).arg(new_index));
+				return true; // Успех
 			}
 
 			attempt++;
 		}
 
-		return false; // ���� �� ������ ����� ������� �������
+		return false; // Ключ не найден после полного прохода
 	}
 
 	void resize(bool isExpands) {
@@ -179,38 +198,42 @@ public:
 			return;
 		}
 
+		DebugLogger::log(QString("HashTable RESIZE: Изменение размера с %1 на %2.").arg(oldCapacity).arg(capacity));
+
 		capacity = newActualCapacity;
 		size = 0;
 		table = new Item[capacity];
 
-		cout << "Table size changed from " << oldCapacity << " to " << capacity << endl;
-		cout << "Rehashing...\n";
-
+		DebugLogger::log("HashTable RESIZE: Начато перехеширование...");
 		for (int i = 0; i < oldCapacity; i++) {
 			if (oldTable[i].status == 1) {
 				add(oldTable[i].key, oldTable[i].index);
 			}
 		}
 		delete[] oldTable;
+		DebugLogger::log("HashTable RESIZE: Перехеширование завершено.");
 	}
 
 	const Item* search(const int& key) const {
 		int index = primaryHash(key);
 		int attempt = 0;
+		DebugLogger::log(QString("HashTable SEARCH: Поиск ключа %1.").arg(key));
 
 		while (attempt < capacity) {
 			int probedIndex = secondaryHash(index, attempt);
 
-			if (table[probedIndex].status == 0) return nullptr;
-			else if (table[probedIndex].status == 1 && table[probedIndex].key == key) return &table[probedIndex];
+			if (table[probedIndex].status == 0) {
+				DebugLogger::log(QString("HashTable SEARCH: Ключ %1 не найден (достигнута пустая ячейка).").arg(key));
+				return nullptr;
+			}
+			else if (table[probedIndex].status == 1 && table[probedIndex].key == key) {
+				DebugLogger::log(QString("HashTable SEARCH: Ключ %1 найден в ячейке %2.").arg(key).arg(probedIndex));
+				return &table[probedIndex];
+			}
 
 			attempt += 1;
 		}
-
+		DebugLogger::log(QString("HashTable SEARCH: Ключ %1 не найден после полного сканирования.").arg(key));
 		return nullptr;
-	}
-
-	~HashTable() {
-		delete[] table;
 	}
 };

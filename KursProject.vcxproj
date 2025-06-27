@@ -92,6 +92,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="DebugLogger.cpp" />
     <ClCompile Include="ReportDialog.cpp" />
     <QtRcc Include="KursProject.qrc" />
     <QtMoc Include="mainwindow.h" />
@@ -110,6 +111,7 @@
     <QtMoc Include="AddClientDialog.h" />
     <QtMoc Include="DeleteClientDialog.h" />
     <QtMoc Include="DeleteConsultationDialog.h" />
+    <QtMoc Include="DebugLogger.h" />
     <ClInclude Include="HashTable.h" />
     <ClInclude Include="LinkedList.h" />
   </ItemGroup>

@@ -60,6 +60,12 @@
     <ClCompile Include="AddConsultationDialog.cpp">
       <Filter>Source Files\Forms</Filter>
     </ClCompile>
+    <ClCompile Include="ReportDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DebugLogger.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DataManager.h">
@@ -87,6 +93,12 @@
     </QtMoc>
     <QtMoc Include="DeleteConsultationDialog.h">
       <Filter>Header Files\Forms</Filter>
+    </QtMoc>
+    <QtMoc Include="ReportDialog.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="DebugLogger.h">
+      <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>
   <ItemGroup>

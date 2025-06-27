@@ -1,4 +1,5 @@
 ﻿    #include "mainwindow.h"
+    #include "DebugLogger.h"
     #include "AddClientDialog.h"
     #include "AddConsultationDialog.h"
     #include "DeleteClientDialog.h"
@@ -22,6 +23,7 @@
     #include <QFileDialog>
     #include <QIcon>
     #include <QPoint>
+    #include <QTextEdit>
 
     MainWindow::MainWindow(QWidget* parent)
         : QMainWindow(parent)  
@@ -29,8 +31,11 @@
         setWindowIcon(QIcon("logo.png"));
 
         setupUi();
-    }
 
+        connect(&DebugLogger::instance(), &DebugLogger::messageLogged, this, &MainWindow::appendToLog);
+
+        DebugLogger::log("Приложение запущено. Интерфейс готов.");
+    }
     MainWindow::~MainWindow()
     {
         // В C++, дочерние QObject'ы автоматически удаляются при уничтожении их родителя.
@@ -55,7 +60,6 @@
         mainLayout->addWidget(mainTabWidget);
 
         // --- Создание вкладок ---
-
         // Создаем одну вкладку с двумя таблицами, как на скриншоте
         QWidget* directoriesTab = new QWidget();
         QHBoxLayout* directoriesLayout = new QHBoxLayout(directoriesTab);
@@ -99,12 +103,30 @@
         // Добавляем подготовленную вкладку в QTabWidget
         mainTabWidget->addTab(directoriesTab, u8"Справочники");
 
-        // При необходимости можно добавить другие вкладки
-        QWidget* reportTab = new QWidget();
-        mainTabWidget->addTab(reportTab, u8"Отчет");
+        // --- ИЗМЕНЕНИЕ 2: НАСТРАИВАЕМ ВКЛАДКУ "ОТЛАДКА" ---
+        QWidget* debugTab = new QWidget();
+        QVBoxLayout* debugLayout = new QVBoxLayout(debugTab);
+
+        // Создаем текстовое поле и делаем его членом класса
+        logDisplay = new QTextEdit(this);
+        logDisplay->setReadOnly(true); // Запрещаем редактирование
+        logDisplay->setFont(QFont("Courier", 9)); // Моноширинный шрифт для логов
+
+        debugLayout->addWidget(logDisplay);
+        debugLayout->setContentsMargins(5, 5, 5, 5); // Небольшие отступы
+
+        // Добавляем вкладку, заменяя старую "Отчет"
+        mainTabWidget->addTab(debugTab, u8"Отладка");
 
         // Устанавливаем вкладку "Справочники" как текущую
         mainTabWidget->setCurrentIndex(0);
+    }
+
+    void MainWindow::appendToLog(const QString& message)
+    {
+        if (logDisplay) {
+            logDisplay->append(message); // Просто добавляем новую строку в конец
+        }
     }
 
     void MainWindow::createActions()

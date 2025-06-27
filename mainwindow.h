@@ -4,6 +4,7 @@
 #include <QMainWindow>
 
 // Forward declarations to avoid including full headers
+class QTextEdit;
 class QTabWidget;
 class QTableWidget;
 class QToolBar;
@@ -20,6 +21,8 @@ public:
 
 private slots:
     // Slots for actions
+    void appendToLog(const QString& message);
+
     void onAddClientRecord();
     void onDeleteClientRecord();
     void onLoadClients();
@@ -46,6 +49,9 @@ private:
 
     void updateClientsTable();
     void updateConsultationsTable();
+
+    // Logs
+    QTextEdit* logDisplay;
 
     // Widget pointers
     QTabWidget* mainTabWidget;

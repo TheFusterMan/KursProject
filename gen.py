@@ -3,9 +3,9 @@ import datetime
 import os
 
 # --- НАСТРОЙКИ ГЕНЕРАЦИИ ---
-NUM_CLIENTS = 10_000       # Сколько клиентов сгенерировать
+NUM_CLIENTS = 10       # Сколько клиентов сгенерировать
 NUM_LAWYERS = 10        # Сколько юристов (для разнообразия в консультациях)
-NUM_CONSULTATIONS = 10_000 # Сколько консультаций сгенерировать
+NUM_CONSULTATIONS = 10 # Сколько консультаций сгенерировать
 
 CLIENTS_FILENAME = "clients.txt"
 CONSULTATIONS_FILENAME = "consultations.txt"

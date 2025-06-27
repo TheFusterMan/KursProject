@@ -45,6 +45,7 @@ public:
         else /*(p->balanceFactor == 1)*/ {
             p1 = p->right;
             if (p1->balanceFactor >= 0) { //Одиночная RR
+                DebugLogger::log(QString("AVLTree Balance: Одиночный RR-поворот вокруг узла с ключом %1").arg(p->key));
                 p->right = p1->left;
                 p1->left = p;
                 if (p1->balanceFactor == 0) {
@@ -59,6 +60,7 @@ public:
                 p = p1;
             }
             else { //двойная RL
+                DebugLogger::log(QString("AVLTree Balance: Двойной RL-поворот вокруг узла с ключом %1").arg(p->key));
                 p2 = p1->left;
                 p1->left = p2->right;
                 p2->right = p1;
@@ -90,6 +92,7 @@ public:
         else /*p->balanceFactor = -1, rebalance*/ {
             p1 = p->left;
             if (p1->balanceFactor <= 0) { //одиночная LL
+                DebugLogger::log(QString("AVLTree Balance: Одиночный LL-поворот вокруг узла с ключом %1").arg(p->key));
                 p->left = p1->right;
                 p1->right = p;
                 if (p1->balanceFactor == 0) {
@@ -104,6 +107,7 @@ public:
                 p = p1;
             }
             else { //двойная LR
+                DebugLogger::log(QString("AVLTree Balance: Двойной LR-поворот вокруг узла с ключом %1").arg(p->key));
                 p2 = p1->right;
                 p1->right = p2->left;
                 p2->left = p1;
@@ -160,9 +164,11 @@ public:
         }
         else { //ключ найден
             if (p->indexList.find(p->head, indexList)) {
+                DebugLogger::log(QString("AVLTree DELETE: Найден ключ %1. Удаляется индекс %2.").arg(key).arg(indexList));
                 p->indexList.removeAll(p->head, indexList);
 
                 if (p->head == nullptr) {
+                    DebugLogger::log(QString("AVLTree DELETE: Список индексов для ключа %1 опустел. Удаляем узел дерева.").arg(key));
                     q = p;
                     if (q->right == nullptr) {
                         p = q->left;
@@ -180,6 +186,7 @@ public:
                     }
                 }
                 else {
+                    DebugLogger::log(QString("AVLTree DELETE: Ключ %1 найден, но индекс %2 в его списке отсутствует.").arg(key).arg(indexList));
                     h = false;
                 }
             }
@@ -202,6 +209,7 @@ public:
         TreeNode* p2;
 
         if (p == nullptr) {
+            DebugLogger::log(QString("AVLTree INSERT: Ключ %1 не найден. Создание нового узла.").arg(key));
             p = new TreeNode(key, index);
             h = true;
         }
@@ -238,6 +246,7 @@ public:
             }
         }
         else {
+            DebugLogger::log(QString("AVLTree INSERT: Ключ %1 уже существует. Добавление индекса %2 в список.").arg(key).arg(index));
             p->indexList.addSorted(p->head, index);
             h = false;
         }
@@ -251,7 +260,13 @@ public:
 
     //4. Поиск заданного элемента
     TreeNode* search(TreeNode* node, unsigned long long key) {
-        if (node == nullptr || node->key == key) {
+        if (node == nullptr) {
+            DebugLogger::log(QString("AVLTree SEARCH: Поиск ключа %1 завершен. Узел не найден.").arg(key));
+            return node;
+        }
+
+        if (node->key == key) {
+            DebugLogger::log(QString("AVLTree SEARCH: Поиск ключа %1 завершен. Узел найден.").arg(key));
             return node;
         }
 

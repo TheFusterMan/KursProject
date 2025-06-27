@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <HashTable.h>
 #include <AVLTree.h>
+#include "DebugLogger.h"
 
 #include <QString>
 #include <stdexcept>
@@ -141,7 +142,7 @@ private:
     static Validator validator;
 
     // Основные хранилища данных
-    inline static HashTable clients_table{ 16 };
+    inline static HashTable clients_table{ 10 };
     inline static QVector<Client> clients_array;
 
     inline static AVLTree consultations_tree; // Ключ: ИНН клиента
@@ -225,9 +226,11 @@ public:
 
     static bool loadClientsFromFile(const QString& filename)
     {
+        DebugLogger::log(QString("DataManager: Попытка загрузки клиентов из файла '%1'").arg(filename));
+
         QFile file(filename);
         if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            qWarning() << "Не удалось открыть файл с клиентами:" << filename;
+            DebugLogger::log(QString("DataManager ERROR: Не удалось открыть файл с клиентами: '%1'").arg(filename));
             return false;
         }
 
@@ -254,7 +257,7 @@ public:
             }
         }
         file.close();
-        qInfo() << "Загружено" << clients_array.size() << "клиентов.";
+        DebugLogger::log(QString("DataManager: Загружено %1 клиентов.").arg(clients_array.size()));
         return true;
     }
 
@@ -338,16 +341,20 @@ public:
     }
 
     static bool addClient(const QString& inn, const QString& fio, const QString& phone) {
+        DebugLogger::log(QString("DataManager: Попытка добавить клиента с ИНН %1").arg(inn));
+
         if (validator.validateINN(inn) && validator.validateFIO(fio) && validator.validatePhone(phone)) {
             quint64 validINN = inn.toULongLong();
             if (findClientByINN(validINN) != nullptr) {
-                qWarning() << "Клиент с ИНН" << inn << "уже существует.";
+                DebugLogger::log(QString("DataManager WARNING: Клиент с ИНН %1 уже существует.").arg(inn));
                 return false;
             }
             clients_array.append({ validINN, FIO(fio), phone.toULongLong() });
             clients_table.add(validINN, clients_array.size() - 1);
+            DebugLogger::log(QString("DataManager: Клиент с ИНН %1 успешно добавлен.").arg(inn));
             return true;
         }
+        DebugLogger::log(QString("DataManager ERROR: Данные клиента с ИНН %1 не прошли валидацию.").arg(inn));
         return false;
     }
 
@@ -361,11 +368,18 @@ public:
             }
 
             int newIndex = consultations_array.size();
-            consultations_array.append({ validINN, theme, FIO(fio), Date(date) });
+            Consultation newConsultation = { validINN, theme, FIO(fio), Date(date) };
+
+            consultations_array.append(newConsultation);
             consultations_tree.add(validINN, newIndex);
 
-            // Перестраиваем дерево фильтрации после добавления данных
-            rebuildFilterTree();
+            // --- ИЗМЕНЕНИЕ ---
+            // Вместо полной перестройки, просто добавляем новый узел в дерево фильтрации
+            quint64 dateKey = dateToKey(newConsultation.date);
+            filter_tree_by_date.add(dateKey, newIndex);
+
+            // rebuildFilterTree(); // УБИРАЕМ ЭТУ СТРОКУ
+
             return true;
         }
         return false;
@@ -410,25 +424,63 @@ public:
         return true;
     }
 
+    //static bool deleteConsultation(int indexInArray)
+    //{
+    //    if (indexInArray < 0 || indexInArray >= consultations_array.size()) return false;
+
+    //    const Consultation& toDelete = consultations_array.at(indexInArray);
+    //    quint64 keyToDelete = toDelete.client_inn;
+    //    int lastIndex = consultations_array.size() - 1;
+
+    //    if (indexInArray < lastIndex) {
+    //        const Consultation& lastElement = consultations_array.last();
+    //        consultations_array[indexInArray] = lastElement;
+    //        consultations_tree.remove(lastElement.client_inn, lastIndex);
+    //        consultations_tree.add(lastElement.client_inn, indexInArray);
+    //    }
+    //    consultations_array.removeLast();
+    //    consultations_tree.remove(keyToDelete, indexInArray);
+
+    //    // Перестраиваем дерево фильтрации после удаления данных
+    //    rebuildFilterTree();
+    //    return true;
+    //}
     static bool deleteConsultation(int indexInArray)
     {
         if (indexInArray < 0 || indexInArray >= consultations_array.size()) return false;
 
+        // --- НАЧАЛО ИЗМЕНЕНИЙ ---
+        // Шаг 1: Получаем информацию об удаляемом элементе ДО модификации массива
         const Consultation& toDelete = consultations_array.at(indexInArray);
-        quint64 keyToDelete = toDelete.client_inn;
-        int lastIndex = consultations_array.size() - 1;
+        quint64 keyToDeleteFromMainTree = toDelete.client_inn;
+        quint64 keyToDeleteFromFilterTree = dateToKey(toDelete.date);
 
+        // Шаг 2: Удаляем запись из дерева фильтрации для удаляемого элемента
+        filter_tree_by_date.remove(keyToDeleteFromFilterTree, indexInArray);
+
+        // Шаг 3: Выполняем "swap-and-pop" и модифицируем основное дерево (consultations_tree)
+        int lastIndex = consultations_array.size() - 1;
         if (indexInArray < lastIndex) {
             const Consultation& lastElement = consultations_array.last();
             consultations_array[indexInArray] = lastElement;
+
+            // Обновляем основное дерево
             consultations_tree.remove(lastElement.client_inn, lastIndex);
             consultations_tree.add(lastElement.client_inn, indexInArray);
-        }
-        consultations_array.removeLast();
-        consultations_tree.remove(keyToDelete, indexInArray);
 
-        // Перестраиваем дерево фильтрации после удаления данных
-        rebuildFilterTree();
+            // Шаг 4: Обновляем дерево фильтрации для перемещенного элемента
+            quint64 lastElementDateKey = dateToKey(lastElement.date);
+            // Сначала удаляем его старую запись по старому индексу
+            filter_tree_by_date.remove(lastElementDateKey, lastIndex);
+            // Затем добавляем новую запись с новым индексом
+            filter_tree_by_date.add(lastElementDateKey, indexInArray);
+        }
+
+        consultations_array.removeLast();
+        consultations_tree.remove(keyToDeleteFromMainTree, indexInArray);
+
+        // rebuildFilterTree(); // УБИРАЕМ ЭТУ СТРОКУ
+        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
         return true;
     }
 
