@@ -8,15 +8,22 @@
 #include <QFile>
 #include <QTextStream> // Added for QTextStream
 #include <QVector>
+#include <QDebug> // Для вывода отладочной информации
 
+// Структуры данных (без изменений)
 struct Date {
-    Date() = default;
+    Date() : day(0), month(0), year(0) {} // Инициализация по умолчанию
 
     Date(QString textParts) {
         QStringList dateParts = textParts.split('.');
-        day = dateParts[0].toInt();
-        month = dateParts[1].toInt();
-        year = dateParts[2].toInt();
+        if (dateParts.size() == 3) {
+            day = dateParts[0].toInt();
+            month = dateParts[1].toInt();
+            year = dateParts[2].toInt();
+        }
+        else {
+            day = 0; month = 0; year = 0;
+        }
     }
 
     int day;
@@ -38,30 +45,15 @@ struct FIO {
 
     FIO() = default;
 
-    // Конструктор из строки fio
-    // Ключевое слово 'explicit' предотвращает неявные преобразования типов
     explicit FIO(const QString& fullName) {
-        // 1. Разделяем строку по пробелам.
-        // Qt::SkipEmptyParts удаляет пустые строки, которые могут появиться,
-        // если между словами несколько пробелов или в начале/конце строки.
         const QStringList parts = fullName.split(' ', Qt::SkipEmptyParts);
-
-        // 2. Присваиваем части структуры, проверяя их наличие.
-        // .at() безопаснее, чем [], так как не вызовет падения при выходе за границы.
-        if (parts.size() > 0) {
-            f = parts.at(0);
-        }
-        if (parts.size() > 1) {
-            i = parts.at(1);
-        }
-        if (parts.size() > 2) {
-            o = parts.at(2);
-        }
-        // Если в строке больше 3 слов, остальные просто игнорируются.
+        if (parts.size() > 0) f = parts.at(0);
+        if (parts.size() > 1) i = parts.at(1);
+        if (parts.size() > 2) o = parts.at(2);
     }
 
     QString toString() const {
-        return QString(f + " " + i + " " + o);
+        return QString(f + " " + i + " " + o).trimmed();
     }
 };
 
@@ -86,13 +78,15 @@ struct Consultation {
     }
 };
 
+// Критерии для фильтрации отчета
 struct FilterCriteria
 {
-    Date date;
-    QString client_fio;
-    QString lawyer_fio;
+    Date date; // Если year == 0, фильтр по дате не применяется
+    QString client_fio; // Если пустая строка, фильтр не применяется
+    QString lawyer_fio; // Если пустая строка, фильтр не применяется
 };
 
+// Одна запись в итоговом отчете
 struct ReportEntry
 {
     Date date;
@@ -100,66 +94,45 @@ struct ReportEntry
     FIO client_fio;
 };
 
+// Класс Validator (без изменений)
 static class Validator {
 public:
     static bool validateINN(const QString& inn) {
         static const QRegularExpression innRegex(QStringLiteral("^\\d{12}$"));
-        if (!innRegex.match(inn).hasMatch()) {
-            return false;
-            //throw std::invalid_argument("INN must consist of exactly 12 digits."); // Original: "ИНН должен состоять ровно из 12 цифр."
-        }
-        return true;
+        return innRegex.match(inn).hasMatch();
     }
 
     static bool validateFIO(const QString& fio) {
         static const QRegularExpression fioRegex(QStringLiteral("^[А-ЯЁ][а-яё]+ [А-ЯЁ][а-яё]+ [А-ЯЁ][а-яё]+$"));
-        if (!fioRegex.match(fio).hasMatch()) {
-            return false;
-        }
-        return true;
+        return fioRegex.match(fio).hasMatch();
     }
 
     static bool validatePhone(const QString& phone) {
         static const QRegularExpression phoneRegex(u8"^89\\d{9}$");
-        if (!phoneRegex.match(phone).hasMatch()) {
-            return false;
-        }
-        return true;
+        return phoneRegex.match(phone).hasMatch();
     }
 
     static bool validateDate(const QString& date) {
         QStringList dateParts = date.trimmed().split('.');
-        Date dateToValidate;
+        if (dateParts.size() != 3) return false;
+
         bool isDayOk, isMonthOk, isYearOk;
-        if (dateParts.size() == 3) {
-            dateToValidate.day = dateParts[0].toInt(&isDayOk);
-            dateToValidate.month = dateParts[1].toInt(&isMonthOk);
-            dateToValidate.year = dateParts[2].toInt(&isYearOk);
+        int day = dateParts[0].toInt(&isDayOk);
+        int month = dateParts[1].toInt(&isMonthOk);
+        int year = dateParts[2].toInt(&isYearOk);
 
-            if (!(isDayOk && isMonthOk && isYearOk)) return false;
-        }
-
-        if (dateToValidate.year < 1970 || dateToValidate.year > 2038) {
-            return false;
-        }
-        if (dateToValidate.month < 1 || dateToValidate.month > 12) {
-            return false;
-        }
+        if (!isDayOk || !isMonthOk || !isYearOk) return false;
+        if (year < 1970 || year > 2038) return false;
+        if (month < 1 || month > 12) return false;
 
         int max_days = 31;
-        if (dateToValidate.month == 4 || dateToValidate.month == 6 || dateToValidate.month == 9 || dateToValidate.month == 11) {
-            max_days = 30;
-        }
-        else if (dateToValidate.month == 2) {
-            bool isLeap = (dateToValidate.year % 4 == 0 && dateToValidate.year % 100 != 0) || (dateToValidate.year % 400 == 0);
+        if (month == 4 || month == 6 || month == 9 || month == 11) max_days = 30;
+        else if (month == 2) {
+            bool isLeap = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
             max_days = isLeap ? 29 : 28;
         }
 
-        if (dateToValidate.day < 1 || dateToValidate.day > max_days) {
-            return false;
-        }
-
-        return true;
+        return (day >= 1 && day <= max_days);
     }
 };
 
@@ -167,13 +140,89 @@ static class DataManager {
 private:
     static Validator validator;
 
-    inline static HashTable clients_table {16};
+    // Основные хранилища данных
+    inline static HashTable clients_table{ 16 };
     inline static QVector<Client> clients_array;
-    
-    inline static AVLTree consultations_tree;
+
+    inline static AVLTree consultations_tree; // Ключ: ИНН клиента
     inline static QVector<Consultation> consultations_array;
 
-    public:
+    // --- НОВОЕ: ДЕРЕВО ФИЛЬТРАЦИИ ДЛЯ ОТЧЕТОВ ---
+    inline static AVLTree filter_tree_by_date; // Ключ: Дата
+
+    // Преобразует дату в числовой ключ для АВЛ-дерева (ГГГГММДД)
+    static quint64 dateToKey(const Date& date) {
+        return static_cast<quint64>(date.year) * 10000 +
+            static_cast<quint64>(date.month) * 100 +
+            static_cast<quint64>(date.day);
+    }
+
+    // Полностью перестраивает дерево фильтрации на основе текущего массива консультаций
+    static void rebuildFilterTree() {
+        filter_tree_by_date.freeTree(filter_tree_by_date.root);
+        filter_tree_by_date.root = nullptr;
+
+        for (int i = 0; i < consultations_array.size(); ++i) {
+            const auto& consultation = consultations_array.at(i);
+            quint64 key = dateToKey(consultation.date);
+            filter_tree_by_date.add(key, i);
+        }
+        qInfo() << "Дерево фильтрации по дате успешно перестроено.";
+    }
+
+    // Рекурсивный обход дерева для построения отчета
+    static void traverseForReport(TreeNode* node, const FilterCriteria& criteria, QVector<ReportEntry>& reportData) {
+        if (!node) {
+            return;
+        }
+
+        // In-order traversal (сначала левое поддерево) для сохранения сортировки по дате
+        traverseForReport(node->left, criteria, reportData);
+
+        // --- Обработка текущего узла ---
+        bool dateFilterActive = criteria.date.year > 0;
+        quint64 criteriaDateKey = dateFilterActive ? dateToKey(criteria.date) : 0;
+
+        // 1. Проверяем фильтр по дате
+        if (!dateFilterActive || node->key == criteriaDateKey) {
+            // Дата подходит, теперь проверяем каждую консультацию в эту дату
+            ListNode* currentIndexNode = node->head;
+            while (currentIndexNode) {
+                int consultationIndex = currentIndexNode->data;
+                const Consultation& consultation = consultations_array.at(consultationIndex);
+                const Client* client = findClientByINN(consultation.client_inn);
+
+                if (client) {
+                    // 2. Проверяем фильтр по ФИО клиента
+                    bool clientFioMatch = criteria.client_fio.isEmpty() ||
+                        client->fio.toString().contains(criteria.client_fio, Qt::CaseInsensitive);
+
+                    // 3. Проверяем фильтр по ФИО юриста
+                    bool lawyerFioMatch = criteria.lawyer_fio.isEmpty() ||
+                        consultation.lawyer_fio.toString().contains(criteria.lawyer_fio, Qt::CaseInsensitive);
+
+                    // Если все фильтры пройдены, добавляем запись в отчет
+                    if (clientFioMatch && lawyerFioMatch) {
+                        reportData.append({ consultation.date, consultation.lawyer_fio, client->fio });
+                    }
+                }
+                currentIndexNode = currentIndexNode->next;
+            }
+        }
+        // --- Конец обработки ---
+
+        // Обходим правое поддерево
+        traverseForReport(node->right, criteria, reportData);
+    }
+
+public:
+    // --- НОВЫЙ ПУБЛИЧНЫЙ МЕТОД ДЛЯ ГЕНЕРАЦИИ ОТЧЕТА ---
+    static QVector<ReportEntry> generateReport(const FilterCriteria& criteria) {
+        QVector<ReportEntry> reportData;
+        traverseForReport(filter_tree_by_date.root, criteria, reportData);
+        return reportData;
+    }
+
     static bool loadClientsFromFile(const QString& filename)
     {
         QFile file(filename);
@@ -183,7 +232,7 @@ private:
         }
 
         clients_array.clear();
-        //clients_table.clear();
+        // clients_table.clear(); // Предполагается, что ваша HashTable имеет метод clear или пересоздается
 
         QTextStream in(&file);
         int index = 0;
@@ -195,10 +244,7 @@ private:
                 Client client;
                 client.inn = parts[0].trimmed().toULongLong();
                 client.phone = parts[2].trimmed().toULongLong();
-                QStringList fioParts = parts[1].trimmed().split(' ');
-                client.fio.f = fioParts[0];
-                client.fio.i = fioParts[1];
-                client.fio.o = fioParts[2];
+                client.fio = FIO(parts[1].trimmed());
                 clients_array.append(client);
                 clients_table.add(client.inn, index);
                 index++;
@@ -207,7 +253,6 @@ private:
                 qWarning() << "Incorrect line format in clients file:" << line;
             }
         }
-
         file.close();
         qInfo() << "Загружено" << clients_array.size() << "клиентов.";
         return true;
@@ -222,6 +267,7 @@ private:
 
         consultations_array.clear();
         consultations_tree.freeTree(consultations_tree.root);
+        consultations_tree.root = nullptr;
 
         QTextStream in(&file);
         int index = 0;
@@ -230,13 +276,11 @@ private:
             QStringList parts = line.split(';');
 
             if (parts.size() == 4 && validator.validateINN(parts[0].trimmed()) && validator.validateFIO(parts[2].trimmed()) && validator.validateDate(parts[3].trimmed())) {
-                Date date (parts[3].trimmed());
-
                 Consultation consultation;
                 consultation.client_inn = parts[0].toULongLong();
                 consultation.topic = parts[1].trimmed();
                 consultation.lawyer_fio = FIO(parts[2].trimmed());
-                consultation.date = date;
+                consultation.date = Date(parts[3].trimmed());
 
                 if (findClientByINN(consultation.client_inn) != nullptr) {
                     consultations_array.append(consultation);
@@ -248,42 +292,33 @@ private:
                 }
             }
             else {
-                qWarning() << "Некорректное количество полей в строке файла консультаций или некорректный формат строки в файле консультаций:" << line;
+                qWarning() << "Некорректный формат строки в файле консультаций:" << line;
             }
         }
         file.close();
         qInfo() << "Загружено" << consultations_array.size() << "консультаций.";
+
+        // Перестраиваем дерево фильтрации после загрузки данных
+        rebuildFilterTree();
         return true;
     }
 
     static bool saveClientsToFile(const QString& filename)
     {
         QFile file(filename);
-        // Открываем файл для записи. QIODevice::WriteOnly перезапишет файл, если он существует.
-        // QIODevice::Text обеспечивает правильную обработку символов новой строки.
         if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
             qWarning() << "Не удалось открыть файл для записи:" << filename;
             return false;
         }
-
-        // Создаем текстовый поток для удобной записи в файл
         QTextStream out(&file);
-        //out.setCodec("UTF-8"); // Устанавливаем кодировку UTF-8 для корректной записи кириллицы
-
-        // Проходим по всему массиву клиентов
         for (const Client& client : clients_array) {
-            // Формируем строку в формате "ИНН;ФИО;Телефон"
             QString line = QString("%1;%2;%3")
                 .arg(client.inn)
                 .arg(client.fio.toString())
-                .arg(QString::number(client.phone)); // Телефон тоже конвертируем в строку
-
-            // Записываем строку в файл и добавляем символ новой строки
+                .arg(QString::number(client.phone));
             out << line << "\n";
         }
-
-        file.close(); // Закрываем файл после записи
-        qInfo() << "Сохранено" << clients_array.size() << "клиентов в файл" << filename;
+        file.close();
         return true;
     }
 
@@ -294,225 +329,124 @@ private:
             qWarning() << "Не удалось открыть файл для записи консультаций:" << filename;
             return false;
         }
-
         QTextStream out(&file);
         for (const Consultation& consultation : consultations_array) {
             out << consultation.toFileLine() << "\n";
         }
-
         file.close();
-        qInfo() << "Сохранено" << consultations_array.size() << "консультаций в файл" << filename;
         return true;
     }
 
     static bool addClient(const QString& inn, const QString& fio, const QString& phone) {
         if (validator.validateINN(inn) && validator.validateFIO(fio) && validator.validatePhone(phone)) {
             quint64 validINN = inn.toULongLong();
-            FIO validFIO (fio);
-            quint64 validPhone = phone.toULongLong();
-
-            if (clients_table.add(validINN, clients_array.length() - 1)) {
-                clients_array.append({
-                    validINN,
-                    validFIO,
-                    validPhone
-                    });
-
-                return true;
+            if (findClientByINN(validINN) != nullptr) {
+                qWarning() << "Клиент с ИНН" << inn << "уже существует.";
+                return false;
             }
+            clients_array.append({ validINN, FIO(fio), phone.toULongLong() });
+            clients_table.add(validINN, clients_array.size() - 1);
+            return true;
         }
         return false;
     }
 
-    static bool addConsultation(const QString& inn, const QString& fio, const QString& theame, const QString& date)
+    static bool addConsultation(const QString& inn, const QString& fio, const QString& theme, const QString& date)
     {
-        if (validator.validateINN(inn) && validator.validateFIO(fio) /*&& validator.validateTheme(theame)*/ && validator.validateDate(date)) {
-            Date validDate (date);
+        if (validator.validateINN(inn) && validator.validateFIO(fio) && validator.validateDate(date)) {
             quint64 validINN = inn.toULongLong();
-            FIO validFIO(fio);
-
             if (findClientByINN(validINN) == nullptr) {
                 qWarning() << "Попытка добавить консультацию для несуществующего клиента с ИНН:" << validINN;
                 return false;
             }
 
             int newIndex = consultations_array.size();
-            consultations_array.append({ validINN, theame, validFIO, validDate });
+            consultations_array.append({ validINN, theme, FIO(fio), Date(date) });
             consultations_tree.add(validINN, newIndex);
 
+            // Перестраиваем дерево фильтрации после добавления данных
+            rebuildFilterTree();
             return true;
         }
-
         return false;
     }
 
     static bool deleteClient(const QString& inn, const QString& fio, const QString& phone)
     {
-        // ... вся начальная валидация и поиск клиента остаются без изменений ...
-        // ... (код до блока "НАЧАЛО ИЗМЕНЕНИЙ")
+        if (!validator.validateINN(inn) || !validator.validateFIO(fio) || !validator.validatePhone(phone)) return false;
 
-        // 1. Валидация входных данных
-        if (!validator.validateINN(inn) || !validator.validateFIO(fio) || !validator.validatePhone(phone)) {
-            qWarning() << "Invalid data format for deletion.";
+        quint64 innToDelete_q64 = inn.toULongLong();
+        const Client* clientToDelete = findClientByINN(innToDelete_q64);
+
+        if (!clientToDelete || clientToDelete->fio.toString() != fio || clientToDelete->phone != phone.toULongLong()) {
+            qInfo() << "Клиент не найден или данные не совпадают. Удаление отменено.";
             return false;
         }
+        int indexToDeleteInClients = clientToDelete - &clients_array[0]; // Находим индекс клиента
 
-        bool ok;
-        quint64 innToDelete_q64 = inn.toULongLong(&ok);
-        if (!ok) {
-            qWarning() << "INN conversion to number failed:" << inn;
-            return false;
-        }
-        int innToDelete_int = static_cast<int>(innToDelete_q64);
-
-        // 2. Ищем клиента по ИНН в хеш-таблице
-        const Item* itemToDelete = clients_table.search(innToDelete_int);
-
-        if (itemToDelete == nullptr) {
-            qInfo() << "Client with INN" << inn << "not found. Deletion failed.";
-            return false;
+        // --- Удаление связанных консультаций ---
+        bool consultationsWereRemoved = false;
+        QVector<int> indices = findConsultationIndicesByINN(innToDelete_q64);
+        // Сортируем индексы в обратном порядке, чтобы удаление не сбивало последующие индексы
+        std::sort(indices.rbegin(), indices.rend());
+        for (int index : indices) {
+            deleteConsultation(index);
+            consultationsWereRemoved = true;
         }
 
-        int indexToDelete = itemToDelete->index;
+        // Если консультации были удалены, дерево фильтрации уже перестроилось в deleteConsultation.
+        // Если нет, ничего делать не нужно.
 
-        if (indexToDelete < 0 || indexToDelete >= clients_array.size()) {
-            qWarning() << "Hash table contains an invalid index" << indexToDelete << "for INN" << inn;
-            return false;
-        }
-
-        // 3. Сверяем остальные данные (ФИО, телефон) для полного совпадения
-        const Client& clientInArray = clients_array.at(indexToDelete);
-        FIO fioFromInput(fio);
-        quint64 phoneFromInput = phone.toULongLong();
-
-        if (clientInArray.fio.toString() != fioFromInput.toString() || clientInArray.phone != phoneFromInput) {
-            qInfo() << "Client with INN" << inn << "found, but FIO/phone do not match. Deletion aborted.";
-            return false;
-        }
-
-        // --- ОБНОВЛЕННАЯ ЛОГИКА УДАЛЕНИЯ СВЯЗАННЫХ КОНСУЛЬТАЦИЙ ---
-
-        int consultationsRemovedCount = 0;
-        // Цикл будет работать, пока для данного ИНН находятся консультации
-        while (true) {
-            QVector<int> indices = findConsultationIndicesByINN(innToDelete_q64);
-            if (indices.isEmpty()) {
-                // Консультаций для этого клиента больше нет, выходим из цикла
-                break;
-            }
-            // Удаляем первую найденную консультацию. На следующей итерации
-            // find... вернет обновленный список.
-            deleteConsultation(indices.first());
-            consultationsRemovedCount++;
-        }
-
-        if (consultationsRemovedCount > 0) {
-            qInfo() << "Удалено" << consultationsRemovedCount << "связанных консультаций для клиента с ИНН" << inn;
-        }
-
-        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
-
-        // --- Удаление самого клиента (этот блок остается без изменений) ---
-        int lastIndex = clients_array.size() - 1;
-        if (indexToDelete < lastIndex) {
+        // --- Удаление самого клиента (swap-and-pop) ---
+        int lastClientIndex = clients_array.size() - 1;
+        if (indexToDeleteInClients < lastClientIndex) {
             const Client& lastClient = clients_array.last();
-            int lastClientInn_int = static_cast<int>(lastClient.inn);
-            clients_array[indexToDelete] = lastClient;
-            if (!clients_table.updateIndex(lastClientInn_int, indexToDelete)) {
-                qCritical() << "CRITICAL: Inconsistency! Could not update index for client with INN"
-                    << lastClient.inn << " in the hash table.";
-                return false;
-            }
+            clients_array[indexToDeleteInClients] = lastClient;
+            clients_table.updateIndex(lastClient.inn, indexToDeleteInClients);
         }
-        clients_table.remove(innToDelete_int);
+        clients_table.remove(innToDelete_q64);
         clients_array.removeLast();
-        qInfo() << "Client with INN" << inn << "successfully deleted.";
+        qInfo() << "Клиент с ИНН" << inn << "успешно удален.";
         return true;
     }
+
     static bool deleteConsultation(int indexInArray)
     {
-        // Проверка на корректность индекса
-        if (indexInArray < 0 || indexInArray >= consultations_array.size()) {
-            qWarning() << "Попытка удаления консультации по неверному индексу:" << indexInArray;
-            return false;
-        }
+        if (indexInArray < 0 || indexInArray >= consultations_array.size()) return false;
 
-        // Сохраняем ключ удаляемого элемента для последующего удаления из дерева
         const Consultation& toDelete = consultations_array.at(indexInArray);
         quint64 keyToDelete = toDelete.client_inn;
-
         int lastIndex = consultations_array.size() - 1;
 
-        // Используем эффективный метод удаления из вектора (swap-and-pop)
-        // Если удаляемый элемент не является последним
         if (indexInArray < lastIndex) {
-            // 1. Получаем последний элемент
             const Consultation& lastElement = consultations_array.last();
-
-            // 2. Перемещаем его на место удаляемого
             consultations_array[indexInArray] = lastElement;
-
-            // 3. Обновляем АВЛ-дерево для ПЕРЕМЕЩЕННОГО элемента:
-            //    а) Удаляем его старый индекс (lastIndex)
             consultations_tree.remove(lastElement.client_inn, lastIndex);
-            //    б) Добавляем его новый индекс (indexInArray)
             consultations_tree.add(lastElement.client_inn, indexInArray);
         }
-
-        // 4. Удаляем последний элемент из массива (быстрая операция)
-        //    Если мы были в if, это копия элемента, который мы переместили.
-        //    Если indexInArray == lastIndex, это и есть удаляемый элемент.
         consultations_array.removeLast();
-
-        // 5. Теперь удаляем из дерева ИНДЕКС исходного (удаляемого) элемента.
-        //    Это нужно делать после всех манипуляций с массивом, чтобы
-        //    не удалить не тот узел по ошибке.
         consultations_tree.remove(keyToDelete, indexInArray);
 
+        // Перестраиваем дерево фильтрации после удаления данных
+        rebuildFilterTree();
         return true;
     }
 
-    static const QVector<Client>& getClients() 
-    {
-        return clients_array;
-    }
+    static const QVector<Client>& getClients() { return clients_array; }
+    static const QVector<Consultation>& getConsultations() { return consultations_array; }
 
-    static const QVector<Consultation>& getConsultations() 
-    {
-        return consultations_array;
-    }
-
-    static const Client* findClientByINN(quint64 inn)
-    {
-        // 1. Приводим ключ к типу int, который использует ваша хеш-таблица
-        int inn_int = static_cast<int>(inn);
-
-        // 2. Ищем в хеш-таблице. Метод search вернет указатель на Item или nullptr.
-        const Item* foundItem = clients_table.search(inn_int);
-
-        // 3. Проверяем результат поиска
-        if (foundItem != nullptr) { // Убеждаемся, что указатель не нулевой (т.е. клиент найден)
+    static const Client* findClientByINN(quint64 inn) {
+        const Item* foundItem = clients_table.search(inn);
+        if (foundItem) {
             int index = foundItem->index;
-
-            // 4. Проверяем валидность индекса, полученного из хеш-таблицы
             if (index >= 0 && index < clients_array.size()) {
-                // Индекс валиден, возвращаем указатель на клиента в массиве
                 return &clients_array[index];
             }
-            else {
-                // Ошибка: в хеш-таблице хранится "мусорный" индекс.
-                // Этого не должно происходить в исправной системе.
-                qWarning() << "Inconsistency found: HashTable returned invalid index" << index << "for INN" << inn;
-                return nullptr;
-            }
         }
-
-        // 5. Если search вернул nullptr, значит клиент не найден.
         return nullptr;
     }
 
-    static QVector<int> findConsultationIndicesByINN(quint64 inn)
-    {
+    static QVector<int> findConsultationIndicesByINN(quint64 inn) {
         QVector<int> indices;
         TreeNode* node = consultations_tree.find(inn);
         if (node) {

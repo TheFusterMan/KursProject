@@ -92,6 +92,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ReportDialog.cpp" />
     <QtRcc Include="KursProject.qrc" />
     <QtMoc Include="mainwindow.h" />
     <ClCompile Include="AddClientDialog.cpp" />
@@ -102,6 +103,7 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <QtMoc Include="ReportDialog.h" />
     <QtMoc Include="AddConsultationDialog.h" />
     <ClInclude Include="AVLTree.h" />
     <ClInclude Include="DataManager.h" />

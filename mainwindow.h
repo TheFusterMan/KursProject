@@ -36,6 +36,8 @@ private slots:
     void onLoadConsultations();
     void onSaveConsultations();
     void onFindConsultations();
+
+    void onGenerateReport();
 private:
     // UI setup methods
     void setupUi();
@@ -64,6 +66,7 @@ private:
     QAction* findAction;
     QAction* exitAction;
     QAction* aboutAction;
+    QAction* reportAction;
 
     QAction* addConsultationAction;
     QAction* deleteConsultationAction;

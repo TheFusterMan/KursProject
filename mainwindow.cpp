@@ -2,6 +2,7 @@
     #include "AddClientDialog.h"
     #include "AddConsultationDialog.h"
     #include "DeleteClientDialog.h"
+    #include "ReportDialog.h"
     #include "DataManager.h"
 
     // Включаем все необходимые заголовки
@@ -116,7 +117,9 @@
         findAction = new QAction(u8"Найти", this);
         exitAction = new QAction(u8"Выход", this);
         aboutAction = new QAction(u8"О программе", this);
-
+        reportAction = new QAction(u8"Сформировать отчет", this);
+        
+        connect(reportAction, &QAction::triggered, this, &MainWindow::onGenerateReport);
         connect(addAction, &QAction::triggered, this, &MainWindow::onAddClientRecord);
         connect(deleteAction, &QAction::triggered, this, &MainWindow::onDeleteClientRecord);
         connect(loadClientsAction, &QAction::triggered, this, &MainWindow::onLoadClients);
@@ -138,7 +141,6 @@
         connect(saveConsultationsAction, &QAction::triggered, this, &MainWindow::onSaveConsultations);
         connect(findConsultationsAction, &QAction::triggered, this, &MainWindow::onFindConsultations);
     }
-
     void MainWindow::createMenus()
     {
         fileMenu = menuBar()->addMenu(u8"&Файл");
@@ -146,6 +148,8 @@
         fileMenu->addAction(loadConsultationsAction);
         fileMenu->addAction(saveClientsAction);
         fileMenu->addAction(saveConsultationsAction);
+        fileMenu->addSeparator();
+        fileMenu->addAction(reportAction);
         fileMenu->addSeparator();
         fileMenu->addAction(exitAction);
 
@@ -556,6 +560,14 @@
         // но для простоты мы просто отфильтруем текущую таблицу.
         // Для полноценной реализации лучше сделать отдельный диалог.
         QMessageBox::information(this, "Информация", "Эта функция пока не реализована.\nДля поиска воспользуйтесь загрузкой данных и визуальным осмотром таблицы.");
+    }
+
+    void MainWindow::onGenerateReport()
+    {
+        // Создаем и показываем диалог отчета.
+        // Поскольку он модальный, код дальше не выполнится, пока диалог не закроется.
+        ReportDialog dialog(this);
+        dialog.exec();
     }
 
     void MainWindow::onAbout()
