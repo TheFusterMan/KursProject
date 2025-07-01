@@ -3,6 +3,8 @@
 
 #include <QMainWindow>
 
+#include "ui_KursProject.h"
+
 class QTabWidget;
 class QTableWidget;
 class QToolBar;
@@ -67,6 +69,9 @@ private:
     QAction* loadConsultationsAction;
     QAction* saveConsultationsAction;
     QAction* findConsultationsAction;
+
+private:
+    Ui::KursProjectClass* ui;
 };
 
 #endif // MAINWINDOW_H

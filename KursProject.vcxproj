@@ -120,6 +120,9 @@
     <Text Include="clients.txt" />
     <Text Include="consultations.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <QtUic Include="KursProject.ui" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">
     <Import Project="$(QtMsBuild)\qt.targets" />

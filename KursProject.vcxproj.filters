@@ -32,6 +32,9 @@
     <Filter Include="Resource Files\Input/Output">
       <UniqueIdentifier>{ec401a84-da71-4202-98b7-9a790dc94a15}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Form Files">
+      <UniqueIdentifier>{2e61f0f5-a699-41a8-a3d8-7ffebe941cac}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <QtRcc Include="KursProject.qrc">
@@ -59,6 +62,9 @@
     </ClCompile>
     <ClCompile Include="AddConsultationDialog.cpp">
       <Filter>Source Files\Forms</Filter>
+    </ClCompile>
+    <ClCompile Include="ReportDialog.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -88,6 +94,9 @@
     <QtMoc Include="DeleteConsultationDialog.h">
       <Filter>Header Files\Forms</Filter>
     </QtMoc>
+    <QtMoc Include="ReportDialog.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <Image Include="D:\Загрузки\logo.png">
@@ -101,5 +110,10 @@
     <Text Include="consultations.txt">
       <Filter>Resource Files\Input/Output</Filter>
     </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <QtUic Include="KursProject.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
   </ItemGroup>
 </Project>

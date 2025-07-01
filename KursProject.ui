@@ -16,7 +16,130 @@
   <property name="windowTitle">
    <string>KursProject</string>
   </property>
-  <widget class="QWidget" name="centralWidget"/>
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QTabWidget" name="mainTabWidget">
+      <property name="layoutDirection">
+       <enum>Qt::LeftToRight</enum>
+      </property>
+      <property name="currentIndex">
+       <number>1</number>
+      </property>
+      <widget class="QWidget" name="tab">
+       <property name="accessibleName">
+        <string>Справочники</string>
+       </property>
+       <attribute name="title">
+        <string>Справочники</string>
+       </attribute>
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <widget class="QTableWidget" name="sellersTable">
+          <property name="contextMenuPolicy">
+           <enum>Qt::CustomContextMenu</enum>
+          </property>
+          <property name="editTriggers">
+           <set>QAbstractItemView::NoEditTriggers</set>
+          </property>
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectRows</enum>
+          </property>
+          <property name="columnCount">
+           <number>3</number>
+          </property>
+          <attribute name="horizontalHeaderVisible">
+           <bool>true</bool>
+          </attribute>
+          <attribute name="horizontalHeaderCascadingSectionResizes">
+           <bool>false</bool>
+          </attribute>
+          <attribute name="horizontalHeaderDefaultSectionSize">
+           <number>100</number>
+          </attribute>
+          <attribute name="horizontalHeaderStretchLastSection">
+           <bool>false</bool>
+          </attribute>
+          <attribute name="verticalHeaderVisible">
+           <bool>false</bool>
+          </attribute>
+          <attribute name="verticalHeaderCascadingSectionResizes">
+           <bool>false</bool>
+          </attribute>
+          <column>
+           <property name="text">
+            <string>ИНН</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>ФИО</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Телефон</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+        <item>
+         <widget class="QTableWidget" name="salesTable">
+          <property name="contextMenuPolicy">
+           <enum>Qt::CustomContextMenu</enum>
+          </property>
+          <property name="editTriggers">
+           <set>QAbstractItemView::NoEditTriggers</set>
+          </property>
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectRows</enum>
+          </property>
+          <property name="columnCount">
+           <number>8</number>
+          </property>
+          <attribute name="horizontalHeaderStretchLastSection">
+           <bool>true</bool>
+          </attribute>
+          <attribute name="verticalHeaderVisible">
+           <bool>false</bool>
+          </attribute>
+          <column>
+           <property name="text">
+            <string>ИНН Клиента</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Тема консультации</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>ФИО Юриста</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Дата</string>
+           </property>
+          </column>
+          <column/>
+          <column/>
+          <column/>
+          <column/>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="reportTab">
+       <attribute name="title">
+        <string>Отчет</string>
+       </attribute>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
     <rect>
@@ -26,55 +149,104 @@
      <height>21</height>
     </rect>
    </property>
-   <widget class="QMenu" name="menu">
+   <widget class="QMenu" name="menuFile">
     <property name="title">
-     <string>Выбрать</string>
+     <string>&amp;Файл</string>
     </property>
-    <addaction name="actionClients"/>
-    <addaction name="actionConsultation"/>
+    <addaction name="actionLoadClients"/>
+    <addaction name="actionLoadConsultations"/>
+    <addaction name="actionSaveClients"/>
+    <addaction name="actionSaveConsultations"/>
     <addaction name="separator"/>
-    <addaction name="actionConsultationForClients"/>
+    <addaction name="actionReport"/>
+    <addaction name="separator"/>
+    <addaction name="actionExit"/>
    </widget>
-   <widget class="QMenu" name="menu_2">
+   <widget class="QMenu" name="menuEdit">
     <property name="title">
-     <string>Редактировать</string>
+     <string>&amp;Правка</string>
     </property>
-    <addaction name="actionAddRecord"/>
-    <addaction name="actionRemoveRecord"/>
+    <addaction name="actionFind"/>
+    <addaction name="actionFindConsultations"/>
     <addaction name="separator"/>
-    <addaction name="actionLoadAndSave"/>
+    <addaction name="actionAddClient"/>
+    <addaction name="actionAddConsultation"/>
+    <addaction name="actionDeleteClient"/>
+    <addaction name="actionDeleteConsultation"/>
    </widget>
-   <addaction name="menu"/>
-   <addaction name="menu_2"/>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>&amp;Справка</string>
+    </property>
+    <addaction name="actionAbout"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuEdit"/>
+   <addaction name="menuHelp"/>
   </widget>
-  <action name="actionClients">
+  <action name="actionLoadClients">
    <property name="text">
-    <string>Справочник Клиенты</string>
+    <string>Загрузить справочник Клиенты</string>
    </property>
   </action>
-  <action name="actionConsultation">
+  <action name="actionLoadConsultations">
    <property name="text">
-    <string>Справочник Консультации</string>
+    <string>Загрузить справочник Консультации</string>
    </property>
   </action>
-  <action name="actionConsultationForClients">
+  <action name="actionSaveClients">
    <property name="text">
-    <string>Отчет Консультации для клиентов</string>
+    <string>Сохранить справочник Клиенты</string>
    </property>
   </action>
-  <action name="actionAddRecord">
+  <action name="actionFind">
    <property name="text">
-    <string>Добавить запись</string>
+    <string>Найти</string>
    </property>
   </action>
-  <action name="actionRemoveRecord">
+  <action name="actionFindConsultations">
    <property name="text">
-    <string>Удалить запись</string>
+    <string>Найти консультации клиента</string>
    </property>
   </action>
-  <action name="actionLoadAndSave">
+  <action name="actionAddClient">
    <property name="text">
-    <string>Загрузить и сохранить</string>
+    <string>Добавить клиента</string>
+   </property>
+  </action>
+  <action name="actionSaveConsultations">
+   <property name="text">
+    <string>Сохранить справочник Консультации</string>
+   </property>
+  </action>
+  <action name="actionReport">
+   <property name="text">
+    <string>Сформировать отчет</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="text">
+    <string>Выход</string>
+   </property>
+  </action>
+  <action name="actionAddConsultation">
+   <property name="text">
+    <string>Добавить консультацию</string>
+   </property>
+  </action>
+  <action name="actionDeleteClient">
+   <property name="text">
+    <string>Удалить клиента</string>
+   </property>
+  </action>
+  <action name="actionDeleteConsultation">
+   <property name="text">
+    <string>Удалить консультацию</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>О программе</string>
    </property>
   </action>
  </widget>

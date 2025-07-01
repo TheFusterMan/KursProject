@@ -89,3 +89,7 @@ Thumbs.db
 Desktop.ini
 # macOS
 .DS_Store
+
+#Справочники
+clients.txt
+consultations.txt
