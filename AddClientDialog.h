@@ -4,19 +4,16 @@
 
 #include <QDialog>
 
-// Предварительное объявление классов, чтобы не включать лишние заголовки
 class QLineEdit;
 class QDialogButtonBox;
 
 class AddClientDialog : public QDialog
 {
-    Q_OBJECT // Обязательный макрос для классов с сигналами и слотами
+    Q_OBJECT
 
 public:
-    // Конструктор
     explicit AddClientDialog(QWidget* parent = nullptr);
 
-    // Методы для получения введенных данных
     QString getINN() const;
     QString getFIO() const;
     QString getPhone() const;

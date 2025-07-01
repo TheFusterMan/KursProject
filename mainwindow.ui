@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>�������� ������</string>
+  </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>logo.png</normaloff>logo.png</iconset>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QTabWidget" name="mainTabWidget">
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <widget class="QWidget" name="directoriesTab">
+       <attribute name="title">
+        <string>�����������</string>
+       </attribute>
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <widget class="QTableWidget" name="sellersTable">
+          <property name="contextMenuPolicy">
+           <enum>Qt::CustomContextMenu</enum>
+          </property>
+          <property name="editTriggers">
+           <set>QAbstractItemView::NoEditTriggers</set>
+          </property>
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectRows</enum>
+          </property>
+          <attribute name="horizontalHeaderStretchLastSection">
+           <bool>true</bool>
+          </attribute>
+          <attribute name="verticalHeaderVisible">
+           <bool>false</bool>
+          </attribute>
+          <column>
+           <property name="text">
+            <string>���</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>���</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>�������</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+        <item>
+         <widget class="QTableWidget" name="salesTable">
+          <property name="contextMenuPolicy">
+           <enum>Qt::CustomContextMenu</enum>
+          </property>
+          <property name="editTriggers">
+           <set>QAbstractItemView::NoEditTriggers</set>
+          </property>
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectRows</enum>
+          </property>
+          <attribute name="horizontalHeaderStretchLastSection">
+           <bool>true</bool>
+          </attribute>
+          <attribute name="verticalHeaderVisible">
+           <bool>false</bool>
+          </attribute>
+          <column>
+           <property name="text">
+            <string>��� �������</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>���� ������������</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>��� ������</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>����</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="reportTab">
+       <attribute name="title">
+        <string>�����</string>
+       </attribute>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="fileMenu">
+    <property name="title">
+     <string>&����</string>
+    </property>
+    <addaction name="actionLoadClients"/>
+    <addaction name="actionLoadConsultations"/>
+    <addaction name="separator"/>
+    <addaction name="actionSaveClients"/>
+    <addaction name="actionSaveConsultations"/>
+    <addaction name="separator"/>
+    <addaction name="actionGenerateReport"/>
+    <addaction name="separator"/>
+    <addaction name="actionExit"/>
+   </widget>
+   <widget class="QMenu" name="editMenu">
+    <property name="title">
+     <string>&������</string>
+    </property>
+    <addaction name="actionFindClient"/>
+    <addaction name="actionFindConsultations"/>
+    <addaction name="separator"/>
+    <addaction name="actionAddClient"/>
+    <addaction name="actionAddConsultation"/>
+    <addaction name="separator"/>
+    <addaction name="actionDeleteClient"/>
+    <addaction name="actionDeleteConsultation"/>
+   </widget>
+   <widget class="QMenu" name="helpMenu">
+    <property name="title">
+     <string>&�������</string>
+    </property>
+    <addaction name="actionAbout"/>
+   </widget>
+   <addaction name="fileMenu"/>
+   <addaction name="editMenu"/>
+   <addaction name="helpMenu"/>
+  </widget>
+  <action name="actionAddClient">
+   <property name="text">
+    <string>�������� �������</string>
+   </property>
+  </action>
+  <action name="actionDeleteClient">
+   <property name="text">
+    <string>������� �������</string>
+   </property>
+  </action>
+  <action name="actionLoadClients">
+   <property name="text">
+    <string>��������� ���������� �������</string>
+   </property>
+  </action>
+  <action name="actionSaveClients">
+   <property name="text">
+    <string>��������� ���������� �������</string>
+   </property>
+  </action>
+  <action name="actionFindClient">
+   <property name="text">
+    <string>����� �������</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="text">
+    <string>�����</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>� ���������</string>
+   </property>
+  </action>
+  <action name="actionGenerateReport">
+   <property name="text">
+    <string>������������ �����</string>
+   </property>
+  </action>
+  <action name="actionAddConsultation">
+   <property name="text">
+    <string>�������� ������������</string>
+   </property>
+  </action>
+  <action name="actionDeleteConsultation">
+   <property name="text">
+    <string>������� ������������</string>
+   </property>
+  </action>
+  <action name="actionLoadConsultations">
+   <property name="text">
+    <string>��������� ���������� ������������</string>
+   </property>
+  </action>
+  <action name="actionSaveConsultations">
+   <property name="text">
+    <string>��������� ���������� ������������</string>
+   </property>
+  </action>
+  <action name="actionFindConsultations">
+   <property name="text">
+    <string>����� ������������ �������</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>actionExit</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

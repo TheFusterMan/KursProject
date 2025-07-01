@@ -6,13 +6,12 @@
 #include <stdexcept>
 #include <QRegularExpression>
 #include <QFile>
-#include <QTextStream> // Added for QTextStream
+#include <QTextStream>
 #include <QVector>
-#include <QDebug> // Для вывода отладочной информации
+#include <QDebug>
 
-// Структуры данных (без изменений)
 struct Date {
-    Date() : day(0), month(0), year(0) {} // Инициализация по умолчанию
+    Date() : day(0), month(0), year(0) {}
 
     Date(QString textParts) {
         QStringList dateParts = textParts.split('.');
@@ -78,15 +77,13 @@ struct Consultation {
     }
 };
 
-// Критерии для фильтрации отчета
 struct FilterCriteria
 {
-    Date date; // Если year == 0, фильтр по дате не применяется
-    QString client_fio; // Если пустая строка, фильтр не применяется
-    QString lawyer_fio; // Если пустая строка, фильтр не применяется
+    Date date;
+    QString client_fio;
+    QString lawyer_fio;
 };
 
-// Одна запись в итоговом отчете
 struct ReportEntry
 {
     Date date;
@@ -94,7 +91,6 @@ struct ReportEntry
     FIO client_fio;
 };
 
-// Класс Validator (без изменений)
 static class Validator {
 public:
     static bool validateINN(const QString& inn) {
@@ -140,24 +136,20 @@ static class DataManager {
 private:
     static Validator validator;
 
-    // Основные хранилища данных
     inline static HashTable clients_table{ 16 };
     inline static QVector<Client> clients_array;
 
-    inline static AVLTree consultations_tree; // Ключ: ИНН клиента
+    inline static AVLTree consultations_tree;
     inline static QVector<Consultation> consultations_array;
 
-    // --- НОВОЕ: ДЕРЕВО ФИЛЬТРАЦИИ ДЛЯ ОТЧЕТОВ ---
-    inline static AVLTree filter_tree_by_date; // Ключ: Дата
+    inline static AVLTree filter_tree_by_date;
 
-    // Преобразует дату в числовой ключ для АВЛ-дерева (ГГГГММДД)
     static quint64 dateToKey(const Date& date) {
         return static_cast<quint64>(date.year) * 10000 +
             static_cast<quint64>(date.month) * 100 +
             static_cast<quint64>(date.day);
     }
 
-    // Полностью перестраивает дерево фильтрации на основе текущего массива консультаций
     static void rebuildFilterTree() {
         filter_tree_by_date.freeTree(filter_tree_by_date.root);
         filter_tree_by_date.root = nullptr;
@@ -170,22 +162,17 @@ private:
         qInfo() << "Дерево фильтрации по дате успешно перестроено.";
     }
 
-    // Рекурсивный обход дерева для построения отчета
     static void traverseForReport(TreeNode* node, const FilterCriteria& criteria, QVector<ReportEntry>& reportData) {
         if (!node) {
             return;
         }
 
-        // In-order traversal (сначала левое поддерево) для сохранения сортировки по дате
         traverseForReport(node->left, criteria, reportData);
 
-        // --- Обработка текущего узла ---
         bool dateFilterActive = criteria.date.year > 0;
         quint64 criteriaDateKey = dateFilterActive ? dateToKey(criteria.date) : 0;
 
-        // 1. Проверяем фильтр по дате
         if (!dateFilterActive || node->key == criteriaDateKey) {
-            // Дата подходит, теперь проверяем каждую консультацию в эту дату
             ListNode* currentIndexNode = node->head;
             while (currentIndexNode) {
                 int consultationIndex = currentIndexNode->data;
@@ -193,15 +180,12 @@ private:
                 const Client* client = findClientByINN(consultation.client_inn);
 
                 if (client) {
-                    // 2. Проверяем фильтр по ФИО клиента
                     bool clientFioMatch = criteria.client_fio.isEmpty() ||
                         client->fio.toString().contains(criteria.client_fio, Qt::CaseInsensitive);
 
-                    // 3. Проверяем фильтр по ФИО юриста
                     bool lawyerFioMatch = criteria.lawyer_fio.isEmpty() ||
                         consultation.lawyer_fio.toString().contains(criteria.lawyer_fio, Qt::CaseInsensitive);
 
-                    // Если все фильтры пройдены, добавляем запись в отчет
                     if (clientFioMatch && lawyerFioMatch) {
                         reportData.append({ consultation.date, consultation.lawyer_fio, client->fio });
                     }
@@ -209,14 +193,11 @@ private:
                 currentIndexNode = currentIndexNode->next;
             }
         }
-        // --- Конец обработки ---
 
-        // Обходим правое поддерево
         traverseForReport(node->right, criteria, reportData);
     }
 
 public:
-    // --- НОВЫЙ ПУБЛИЧНЫЙ МЕТОД ДЛЯ ГЕНЕРАЦИИ ОТЧЕТА ---
     static QVector<ReportEntry> generateReport(const FilterCriteria& criteria) {
         QVector<ReportEntry> reportData;
         traverseForReport(filter_tree_by_date.root, criteria, reportData);
@@ -232,7 +213,6 @@ public:
         }
 
         clients_array.clear();
-        // clients_table.clear(); // Предполагается, что ваша HashTable имеет метод clear или пересоздается
 
         QTextStream in(&file);
         int index = 0;
@@ -298,7 +278,6 @@ public:
         file.close();
         qInfo() << "Загружено" << consultations_array.size() << "консультаций.";
 
-        // Перестраиваем дерево фильтрации после загрузки данных
         rebuildFilterTree();
         return true;
     }
@@ -364,7 +343,6 @@ public:
             consultations_array.append({ validINN, theme, FIO(fio), Date(date) });
             consultations_tree.add(validINN, newIndex);
 
-            // Перестраиваем дерево фильтрации после добавления данных
             rebuildFilterTree();
             return true;
         }
@@ -382,22 +360,16 @@ public:
             qInfo() << "Клиент не найден или данные не совпадают. Удаление отменено.";
             return false;
         }
-        int indexToDeleteInClients = clientToDelete - &clients_array[0]; // Находим индекс клиента
+        int indexToDeleteInClients = clientToDelete - &clients_array[0];
 
-        // --- Удаление связанных консультаций ---
         bool consultationsWereRemoved = false;
         QVector<int> indices = findConsultationIndicesByINN(innToDelete_q64);
-        // Сортируем индексы в обратном порядке, чтобы удаление не сбивало последующие индексы
         std::sort(indices.rbegin(), indices.rend());
         for (int index : indices) {
             deleteConsultation(index);
             consultationsWereRemoved = true;
         }
 
-        // Если консультации были удалены, дерево фильтрации уже перестроилось в deleteConsultation.
-        // Если нет, ничего делать не нужно.
-
-        // --- Удаление самого клиента (swap-and-pop) ---
         int lastClientIndex = clients_array.size() - 1;
         if (indexToDeleteInClients < lastClientIndex) {
             const Client& lastClient = clients_array.last();
@@ -427,7 +399,6 @@ public:
         consultations_array.removeLast();
         consultations_tree.remove(keyToDelete, indexInArray);
 
-        // Перестраиваем дерево фильтрации после удаления данных
         rebuildFilterTree();
         return true;
     }

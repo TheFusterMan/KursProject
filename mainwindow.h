@@ -3,7 +3,6 @@
 
 #include <QMainWindow>
 
-// Forward declarations to avoid including full headers
 class QTabWidget;
 class QTableWidget;
 class QToolBar;
@@ -19,7 +18,6 @@ public:
     ~MainWindow();
 
 private slots:
-    // Slots for actions
     void onAddClientRecord();
     void onDeleteClientRecord();
     void onLoadClients();
@@ -39,7 +37,6 @@ private slots:
 
     void onGenerateReport();
 private:
-    // UI setup methods
     void setupUi();
     void createActions();
     void createMenus();
@@ -47,17 +44,14 @@ private:
     void updateClientsTable();
     void updateConsultationsTable();
 
-    // Widget pointers
     QTabWidget* mainTabWidget;
-    QTableWidget* sellersTable; // Table for Sellers
-    QTableWidget* salesTable;   // Table for Sales
+    QTableWidget* sellersTable;
+    QTableWidget* salesTable;
 
-    // Menus and panels
     QMenu* fileMenu;
     QMenu* editMenu;
     QMenu* helpMenu;
 
-    // Actions
     QAction* addAction;
     QAction* deleteAction;
     QAction* loadClientsAction;
@@ -73,6 +67,6 @@ private:
     QAction* loadConsultationsAction;
     QAction* saveConsultationsAction;
     QAction* findConsultationsAction;
-}; // <-- The crucial semicolon
+};
 
 #endif // MAINWINDOW_H

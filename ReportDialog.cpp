@@ -1,6 +1,5 @@
-﻿// reportdialog.cpp
-#include "reportdialog.h"
-#include "datamanager.h" // Включаем наш фасад для доступа к данным
+﻿#include "reportdialog.h"
+#include "datamanager.h"
 
 #include <QCheckBox>
 #include <QDateEdit>
@@ -25,12 +24,11 @@ ReportDialog::ReportDialog(QWidget* parent)
 
 void ReportDialog::setupUi()
 {
-    // 1. Создание виджетов для фильтров
     dateFilterCheckbox = new QCheckBox(u8"Фильтровать по дате:", this);
     dateEdit = new QDateEdit(QDate::currentDate(), this);
     dateEdit->setCalendarPopup(true);
     dateEdit->setDisplayFormat("dd.MM.yyyy");
-    dateEdit->setEnabled(false); // Изначально поле даты неактивно
+    dateEdit->setEnabled(false);
     dateFilterCheckbox->setChecked(false);
 
     clientFioEdit = new QLineEdit(this);
@@ -38,7 +36,6 @@ void ReportDialog::setupUi()
     lawyerFioEdit = new QLineEdit(this);
     lawyerFioEdit->setPlaceholderText(u8"Часть ФИО юриста (регистр не важен)");
 
-    // 2. Создание компоновки для фильтров
     QFormLayout* filterLayout = new QFormLayout();
     filterLayout->addRow(dateFilterCheckbox, dateEdit);
     filterLayout->addRow(u8"ФИО клиента:", clientFioEdit);
@@ -47,7 +44,6 @@ void ReportDialog::setupUi()
     QGroupBox* filterGroup = new QGroupBox(u8"Критерии фильтрации", this);
     filterGroup->setLayout(filterLayout);
 
-    // 3. Создание таблицы для результатов
     reportTable = new QTableWidget(this);
     reportTable->setColumnCount(3);
     reportTable->setHorizontalHeaderLabels({ u8"Дата", u8"ФИО Юриста", u8"ФИО Клиента" });
@@ -56,53 +52,45 @@ void ReportDialog::setupUi()
     reportTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     reportTable->verticalHeader()->setVisible(false);
 
-    // 4. Создание кнопок
     generateButton = new QPushButton(u8"Сформировать отчет", this);
     closeButton = new QPushButton(u8"Закрыть", this);
 
     QHBoxLayout* buttonLayout = new QHBoxLayout();
-    buttonLayout->addStretch(); // Добавляем растягивающееся пространство
+    buttonLayout->addStretch();
     buttonLayout->addWidget(generateButton);
     buttonLayout->addWidget(closeButton);
 
-    // 5. Главная компоновка диалога
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     mainLayout->addWidget(filterGroup);
     mainLayout->addWidget(reportTable);
     mainLayout->addLayout(buttonLayout);
     setLayout(mainLayout);
 
-    // 6. Соединение сигналов и слотов
     connect(dateFilterCheckbox, &QCheckBox::toggled, dateEdit, &QDateEdit::setEnabled);
     connect(generateButton, &QPushButton::clicked, this, &ReportDialog::onGenerateReport);
-    connect(closeButton, &QPushButton::clicked, this, &ReportDialog::accept); // accept() закрывает диалог
+    connect(closeButton, &QPushButton::clicked, this, &ReportDialog::accept);
 }
 
 void ReportDialog::onGenerateReport()
 {
-    // 1. Собираем критерии из полей ввода
     FilterCriteria criteria;
 
     if (dateFilterCheckbox->isChecked()) {
         QDate qd = dateEdit->date();
-        // Преобразуем QDate в нашу структуру Date
         criteria.date.day = qd.day();
         criteria.date.month = qd.month();
         criteria.date.year = qd.year();
     }
     else {
-        // Если флажок не установлен, год=0 будет сигналом не использовать фильтр по дате
         criteria.date.year = 0;
     }
 
     criteria.client_fio = clientFioEdit->text().trimmed();
     criteria.lawyer_fio = lawyerFioEdit->text().trimmed();
 
-    // 2. Вызываем метод из DataManager для получения данных
     QVector<ReportEntry> reportData = DataManager::generateReport(criteria);
 
-    // 3. Заполняем таблицу результатами
-    reportTable->setRowCount(0); // Очищаем таблицу перед заполнением
+    reportTable->setRowCount(0);
 
     if (reportData.isEmpty()) {
         QMessageBox::information(this, u8"Результат", u8"По заданным критериям ничего не найдено.");
