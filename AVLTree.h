@@ -5,15 +5,16 @@
 
 using namespace std;
 
+template <typename TKey>
 struct TreeNode {
-    unsigned long long key;
+    TKey key;
     IndexList indexList;
     ListNode* head;
     int balanceFactor;
-    TreeNode* left;
-    TreeNode* right;
+    TreeNode<TKey>* left;
+    TreeNode<TKey>* right;
 
-    TreeNode(unsigned long long k, int idx) : key(k), balanceFactor(0), left(nullptr), right(nullptr), head(nullptr) {
+    TreeNode(const TKey& k, int idx) : key(k), balanceFactor(0), left(nullptr), right(nullptr), head(nullptr) {
         indexList.addSorted(head, idx);
     }
 
@@ -22,9 +23,10 @@ struct TreeNode {
     }
 };
 
+template <typename TKey>
 class AVLTree {
 public:
-    TreeNode* root;
+    TreeNode<TKey>* root;
 
     AVLTree() : root(nullptr) {}
     ~AVLTree() {
@@ -32,9 +34,9 @@ public:
     }
 
     //3. Удаление заданного элемента (максимальный слева)
-    TreeNode* balanceL(TreeNode* p, bool& h) {
-        TreeNode* p1;
-        TreeNode* p2;
+    TreeNode<TKey>* balanceL(TreeNode<TKey>* p, bool& h) {
+        TreeNode<TKey>* p1;
+        TreeNode<TKey>* p2;
         if (p->balanceFactor == -1) {
             p->balanceFactor = 0;
         }
@@ -76,9 +78,9 @@ public:
         return p;
     }
 
-    TreeNode* balanceR(TreeNode* p, bool& h) {
-        TreeNode* p1;
-        TreeNode* p2;
+    TreeNode<TKey>* balanceR(TreeNode<TKey>* p, bool& h) {
+        TreeNode<TKey>* p1;
+        TreeNode<TKey>* p2;
 
         if (p->balanceFactor == 1) {
             p->balanceFactor = 0;
@@ -121,7 +123,7 @@ public:
         return p;
     }
 
-    TreeNode* del(TreeNode* r, TreeNode* q, bool& h) {
+    TreeNode<TKey>* del(TreeNode<TKey>* r, TreeNode<TKey>* q, bool& h) {
         if (r->right != nullptr) {
             r->right = del(r->right, q, h);
             if (h) r = balanceR(r, h);
@@ -144,8 +146,8 @@ public:
     }
 
     //3. Удаление заданного элемента (максимальный слева) (при полном совпадении ключа и номера строки)
-    TreeNode* deleteNode(TreeNode* p, unsigned long long key, int indexList, bool& h) {
-        TreeNode* q;
+    TreeNode<TKey>* deleteNode(TreeNode<TKey>* p, const TKey& key, int indexList, bool& h) {
+        TreeNode<TKey>* q;
 
         if (p == nullptr) {
             //cout << "Элемент не найден" << endl;
@@ -191,18 +193,18 @@ public:
         return p;
     }
 
-    void remove(unsigned long long key, int index) {
+    void remove(const TKey& key, int index) {
         bool h = false;
         root = deleteNode(root, key, index, h);
     }
 
     //2. Добавление нового элемента
-    TreeNode* insert(TreeNode* p, unsigned long long key, int index, bool& h) {
-        TreeNode* p1;
-        TreeNode* p2;
+    TreeNode<TKey>* insert(TreeNode<TKey>* p, const TKey& key, int index, bool& h) {
+        TreeNode<TKey>* p1;
+        TreeNode<TKey>* p2;
 
         if (p == nullptr) {
-            p = new TreeNode(key, index);
+            p = new TreeNode<TKey>(key, index);
             h = true;
         }
         else if (p->key > key) {
@@ -244,13 +246,13 @@ public:
         return p;
     }
 
-    void add(quint64 key, int index) {
+    void add(const TKey& key, int index) {
         bool h = false;
         root = insert(root, key, index, h);
     }
 
     //4. Поиск заданного элемента
-    TreeNode* search(TreeNode* node, unsigned long long key) {
+    TreeNode<TKey>* search(TreeNode<TKey>* node, const TKey& key) {
         if (node == nullptr || node->key == key) {
             return node;
         }
@@ -262,12 +264,12 @@ public:
         return search(node->right, key);
     }
 
-    TreeNode* find(quint64 key) {
+    TreeNode<TKey>* find(const TKey& key) {
         return search(root, key);
     }
 
     //7. Освобождение памяти (удаление всего дерева)
-    void freeTree(TreeNode* node) {
+    void freeTree(TreeNode<TKey>* node) {
         if (node) {
             freeTree(node->left);
             freeTree(node->right);
@@ -277,7 +279,7 @@ public:
     }
 
     //1. Инициализация (пустого дерева)
-    void initializeTree(AVLTree& tree) {
+    void initializeTree(AVLTree<TKey>& tree) {
         freeTree(tree.root);
         tree.root = nullptr;
         cout << "Дерево инициализировано (пустое).\n";

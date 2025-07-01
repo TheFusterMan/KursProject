@@ -1,13 +1,13 @@
 ﻿#pragma once
 #include <HashTable.h>
 #include <AVLTree.h>
+#include <CustomVector.h>
 
 #include <QString>
 #include <stdexcept>
 #include <QRegularExpression>
 #include <QFile>
 #include <QTextStream>
-#include <QVector>
 #include <QDebug>
 
 struct Date {
@@ -34,6 +34,24 @@ struct Date {
             .arg(day, 2, 10, QChar('0'))
             .arg(month, 2, 10, QChar('0'))
             .arg(year, 4, 10, QChar('0'));
+    }
+
+    bool operator<(const Date& other) const {
+        if (year < other.year) return true;
+        if (year > other.year) return false;
+
+        if (month < other.month) return true;
+        if (month > other.month) return false;
+
+        return day < other.day;
+    }
+
+    bool operator==(const Date& other) const {
+        return (year == other.year && month == other.month && day == other.day);
+    }
+
+    bool operator>(const Date& other) const {
+        return other < *this;
     }
 };
 
@@ -139,47 +157,77 @@ private:
     inline static HashTable clients_table{ 16 };
     inline static QVector<Client> clients_array;
 
-    inline static AVLTree consultations_tree;
+    inline static AVLTree<quint64> consultations_tree;
     inline static QVector<Consultation> consultations_array;
 
-    inline static AVLTree filter_tree_by_date;
+    inline static AVLTree<Date> filter_tree_by_date;
+    //inline static AVLTree<FIO> filter_tree_by_client_fio;
+    //inline static AVLTree<FIO> filter_tree_by_lawyer_fio;
 
-    static quint64 dateToKey(const Date& date) {
-        return static_cast<quint64>(date.year) * 10000 +
-            static_cast<quint64>(date.month) * 100 +
-            static_cast<quint64>(date.day);
-    }
-
-    static void rebuildFilterTree() {
-        filter_tree_by_date.freeTree(filter_tree_by_date.root);
-        filter_tree_by_date.root = nullptr;
+    static void buildFilterTreeByDate(AVLTree<Date>& filter_tree) {
+        filter_tree.freeTree(filter_tree.root);
+        filter_tree.root = nullptr;
 
         for (int i = 0; i < consultations_array.size(); ++i) {
             const auto& consultation = consultations_array.at(i);
-            quint64 key = dateToKey(consultation.date);
-            filter_tree_by_date.add(key, i);
+            filter_tree.add(consultation.date, i);
         }
-        qInfo() << "Дерево фильтрации по дате успешно перестроено.";
     }
+    //static void buildFilterTreeByClientFIO(AVLTree<FIO>& filter_tree) {
+    //    filter_tree.freeTree(filter_tree.root);
+    //    filter_tree.root = nullptr;
 
-    static void traverseForReport(TreeNode* node, const FilterCriteria& criteria, QVector<ReportEntry>& reportData) {
+    //    for (int i = 0; i < clients_array.size(); ++i) {
+    //        const auto& consultation = clients_array.at(i);
+    //        filter_tree.add(consultation.fio, i);
+    //    }
+    //}
+    //static void buildFilterTreeByLawyerFIO(AVLTree<FIO>& filter_tree) {
+    //    filter_tree.freeTree(filter_tree.root);
+    //    filter_tree.root = nullptr;
+
+    //    for (int i = 0; i < consultations_array.size(); ++i) {
+    //        const auto& consultation = consultations_array.at(i);
+    //        filter_tree.add(consultation.lawyer_fio, i);
+    //    }
+    //}
+
+    static void traverseForReport(TreeNode<Date>* node, const FilterCriteria& criteria, QVector<ReportEntry>& reportData) {
         if (!node) {
-            return;
+            return; // Базовый случай рекурсии: дошли до конца ветки
         }
-
-        traverseForReport(node->left, criteria, reportData);
 
         bool dateFilterActive = criteria.date.year > 0;
-        quint64 criteriaDateKey = dateFilterActive ? dateToKey(criteria.date) : 0;
 
-        if (!dateFilterActive || node->key == criteriaDateKey) {
+        // --- НАЧАЛО ИЗМЕНЕНИЙ ---
+
+        // 1. Решаем, нужно ли идти в ЛЕВОЕ поддерево
+        // Идем налево, если:
+        //   а) фильтр по дате неактивен (нужно обойти все дерево)
+        //   б) или дата в фильтре МЕНЬШЕ даты в текущем узле
+        if (!dateFilterActive || criteria.date < node->key) {
+            traverseForReport(node->left, criteria, reportData);
+        }
+
+        // 2. Решаем, нужно ли обрабатывать ТЕКУЩИЙ узел
+        // Обрабатываем узел, если:
+        //   а) фильтр по дате неактивен
+        //   б) или дата в фильтре РАВНА дате в текущем узле
+        if (!dateFilterActive || criteria.date == node->key) {
             ListNode* currentIndexNode = node->head;
             while (currentIndexNode) {
                 int consultationIndex = currentIndexNode->data;
+                // Проверка на выход за пределы массива на всякий случай
+                if (consultationIndex < 0 || consultationIndex >= consultations_array.size()) {
+                    qWarning() << "Неверный индекс в дереве фильтрации:" << consultationIndex;
+                    currentIndexNode = currentIndexNode->next;
+                    continue;
+                }
                 const Consultation& consultation = consultations_array.at(consultationIndex);
                 const Client* client = findClientByINN(consultation.client_inn);
 
                 if (client) {
+                    // Остальные фильтры (по ФИО) применяются здесь
                     bool clientFioMatch = criteria.client_fio.isEmpty() ||
                         client->fio.toString().contains(criteria.client_fio, Qt::CaseInsensitive);
 
@@ -194,7 +242,14 @@ private:
             }
         }
 
-        traverseForReport(node->right, criteria, reportData);
+        // 3. Решаем, нужно ли идти в ПРАВОЕ поддерево
+        // Идем направо, если:
+        //   а) фильтр по дате неактивен
+        //   б) или дата в фильтре БОЛЬШЕ даты в текущем узле (используем a < b, что эквивалентно b > a)
+        if (!dateFilterActive || node->key < criteria.date) {
+            traverseForReport(node->right, criteria, reportData);
+        }
+        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
     }
 
 public:
@@ -278,7 +333,9 @@ public:
         file.close();
         qInfo() << "Загружено" << consultations_array.size() << "консультаций.";
 
-        rebuildFilterTree();
+        buildFilterTreeByDate(filter_tree_by_date);
+        //buildFilterTree(filter_tree_by_client_fio);
+        //buildFilterTree(filter_tree_by_lawyer_fio);
         return true;
     }
 
@@ -341,9 +398,12 @@ public:
 
             int newIndex = consultations_array.size();
             consultations_array.append({ validINN, theme, FIO(fio), Date(date) });
-            consultations_tree.add(validINN, newIndex);
 
-            rebuildFilterTree();
+            // Добавляем в деревья фильтрации
+            const auto& newConsultation = consultations_array.last();
+            filter_tree_by_date.add(newConsultation.date, newIndex);
+
+            consultations_tree.add(validINN, newIndex);
             return true;
         }
         return false;
@@ -387,19 +447,27 @@ public:
         if (indexInArray < 0 || indexInArray >= consultations_array.size()) return false;
 
         const Consultation& toDelete = consultations_array.at(indexInArray);
-        quint64 keyToDelete = toDelete.client_inn;
+        quint64 innToDelete = toDelete.client_inn;
+        Date dateKeyToDelete = toDelete.date;
+
         int lastIndex = consultations_array.size() - 1;
 
         if (indexInArray < lastIndex) {
             const Consultation& lastElement = consultations_array.last();
             consultations_array[indexInArray] = lastElement;
-            consultations_tree.remove(lastElement.client_inn, lastIndex);
-            consultations_tree.add(lastElement.client_inn, indexInArray);
-        }
-        consultations_array.removeLast();
-        consultations_tree.remove(keyToDelete, indexInArray);
 
-        rebuildFilterTree();
+            consultations_tree.remove(lastElement.client_inn, lastIndex);
+            filter_tree_by_date.remove(lastElement.date, lastIndex);
+
+            consultations_tree.add(lastElement.client_inn, indexInArray);
+            filter_tree_by_date.add(lastElement.date, indexInArray);
+        }
+
+        consultations_array.removeLast();
+
+        consultations_tree.remove(innToDelete, indexInArray);
+        filter_tree_by_date.remove(dateKeyToDelete, indexInArray);
+
         return true;
     }
 
@@ -419,7 +487,7 @@ public:
 
     static QVector<int> findConsultationIndicesByINN(quint64 inn) {
         QVector<int> indices;
-        TreeNode* node = consultations_tree.find(inn);
+        TreeNode<quint64>* node = consultations_tree.find(inn);
         if (node) {
             ListNode* current = node->head;
             while (current) {
