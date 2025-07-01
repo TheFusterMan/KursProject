@@ -52,13 +52,16 @@
            <bool>true</bool>
           </attribute>
           <attribute name="horizontalHeaderCascadingSectionResizes">
-           <bool>false</bool>
+           <bool>true</bool>
+          </attribute>
+          <attribute name="horizontalHeaderMinimumSectionSize">
+           <number>50</number>
           </attribute>
           <attribute name="horizontalHeaderDefaultSectionSize">
            <number>100</number>
           </attribute>
           <attribute name="horizontalHeaderStretchLastSection">
-           <bool>false</bool>
+           <bool>true</bool>
           </attribute>
           <attribute name="verticalHeaderVisible">
            <bool>false</bool>
@@ -95,8 +98,14 @@
            <enum>QAbstractItemView::SelectRows</enum>
           </property>
           <property name="columnCount">
-           <number>8</number>
+           <number>4</number>
           </property>
+          <attribute name="horizontalHeaderCascadingSectionResizes">
+           <bool>true</bool>
+          </attribute>
+          <attribute name="horizontalHeaderMinimumSectionSize">
+           <number>50</number>
+          </attribute>
           <attribute name="horizontalHeaderStretchLastSection">
            <bool>true</bool>
           </attribute>
@@ -123,17 +132,13 @@
             <string>Дата</string>
            </property>
           </column>
-          <column/>
-          <column/>
-          <column/>
-          <column/>
          </widget>
         </item>
        </layout>
       </widget>
       <widget class="QWidget" name="reportTab">
        <attribute name="title">
-        <string>Отчет</string>
+        <string>Отладка</string>
        </attribute>
       </widget>
      </widget>
