@@ -104,9 +104,12 @@ struct FilterCriteria
 
 struct ReportEntry
 {
-    Date date;
-    FIO lawyer_fio;
+    quint64 client_inn;
     FIO client_fio;
+    quint64 phone;
+    QString topic;
+    FIO lawyer_fio;
+    Date date;
 };
 
 static class Validator {
@@ -194,30 +197,64 @@ private:
 
     static void traverseForReport(TreeNode<Date>* node, const FilterCriteria& criteria, QVector<ReportEntry>& reportData) {
         if (!node) {
-            return; // Базовый случай рекурсии: дошли до конца ветки
+            return;
         }
 
         bool dateFilterActive = criteria.date.year > 0;
 
-        // --- НАЧАЛО ИЗМЕНЕНИЙ ---
+        if (dateFilterActive) {
+            // Если фильтр по дате активен, используем быстрый поиск по дереву
+            if (criteria.date < node->key) {
+                traverseForReport(node->left, criteria, reportData);
+            }
+            else if (criteria.date > node->key) {
+                traverseForReport(node->right, criteria, reportData);
+            }
+            else { // criteria.date == node->key
+                // Нашли узел с нужной датой, обрабатываем все консультации в нем
+                ListNode* currentIndexNode = node->head;
+                while (currentIndexNode) {
+                    int consultationIndex = currentIndexNode->data;
+                    if (consultationIndex < 0 || consultationIndex >= consultations_array.size()) {
+                        qWarning() << "Неверный индекс в дереве фильтрации:" << consultationIndex;
+                        currentIndexNode = currentIndexNode->next;
+                        continue;
+                    }
+                    const Consultation& consultation = consultations_array.at(consultationIndex);
+                    const Client* client = findClientByINN(consultation.client_inn);
 
-        // 1. Решаем, нужно ли идти в ЛЕВОЕ поддерево
-        // Идем налево, если:
-        //   а) фильтр по дате неактивен (нужно обойти все дерево)
-        //   б) или дата в фильтре МЕНЬШЕ даты в текущем узле
-        if (!dateFilterActive || criteria.date < node->key) {
-            traverseForReport(node->left, criteria, reportData);
+                    if (client) {
+                        // Применяем остальные фильтры
+                        bool clientFioMatch = criteria.client_fio.isEmpty() ||
+                            client->fio.toString().contains(criteria.client_fio, Qt::CaseInsensitive);
+                        bool lawyerFioMatch = criteria.lawyer_fio.isEmpty() ||
+                            consultation.lawyer_fio.toString().contains(criteria.lawyer_fio, Qt::CaseInsensitive);
+
+                        if (clientFioMatch && lawyerFioMatch) {
+                            // Все фильтры совпали, добавляем объединенную запись в отчет
+                            reportData.append({
+                                client->inn,
+                                client->fio,
+                                client->phone,
+                                consultation.topic,
+                                consultation.lawyer_fio,
+                                consultation.date
+                                });
+                        }
+                    }
+                    currentIndexNode = currentIndexNode->next;
+                }
+                // Дальнейший обход не нужен, т.к. искали конкретную дату
+            }
         }
+        else {
+            // Если фильтр по дате неактивен, делаем полный обход дерева
+            traverseForReport(node->left, criteria, reportData);
 
-        // 2. Решаем, нужно ли обрабатывать ТЕКУЩИЙ узел
-        // Обрабатываем узел, если:
-        //   а) фильтр по дате неактивен
-        //   б) или дата в фильтре РАВНА дате в текущем узле
-        if (!dateFilterActive || criteria.date == node->key) {
+            // Обрабатываем текущий узел
             ListNode* currentIndexNode = node->head;
             while (currentIndexNode) {
                 int consultationIndex = currentIndexNode->data;
-                // Проверка на выход за пределы массива на всякий случай
                 if (consultationIndex < 0 || consultationIndex >= consultations_array.size()) {
                     qWarning() << "Неверный индекс в дереве фильтрации:" << consultationIndex;
                     currentIndexNode = currentIndexNode->next;
@@ -227,31 +264,30 @@ private:
                 const Client* client = findClientByINN(consultation.client_inn);
 
                 if (client) {
-                    // Остальные фильтры (по ФИО) применяются здесь
+                    // Применяем фильтры по ФИО
                     bool clientFioMatch = criteria.client_fio.isEmpty() ||
                         client->fio.toString().contains(criteria.client_fio, Qt::CaseInsensitive);
-
                     bool lawyerFioMatch = criteria.lawyer_fio.isEmpty() ||
                         consultation.lawyer_fio.toString().contains(criteria.lawyer_fio, Qt::CaseInsensitive);
 
                     if (clientFioMatch && lawyerFioMatch) {
-                        reportData.append({ consultation.date, consultation.lawyer_fio, client->fio });
+                        // Добавляем объединенную запись в отчет
+                        reportData.append({
+                            client->inn,
+                            client->fio,
+                            client->phone,
+                            consultation.topic,
+                            consultation.lawyer_fio,
+                            consultation.date
+                            });
                     }
                 }
                 currentIndexNode = currentIndexNode->next;
             }
-        }
 
-        // 3. Решаем, нужно ли идти в ПРАВОЕ поддерево
-        // Идем направо, если:
-        //   а) фильтр по дате неактивен
-        //   б) или дата в фильтре БОЛЬШЕ даты в текущем узле (используем a < b, что эквивалентно b > a)
-        if (!dateFilterActive || node->key < criteria.date) {
             traverseForReport(node->right, criteria, reportData);
         }
-        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
     }
-
 public:
     static QVector<ReportEntry> generateReport(const FilterCriteria& criteria) {
         QVector<ReportEntry> reportData;
