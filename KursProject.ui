@@ -140,6 +140,22 @@
        <attribute name="title">
         <string>Отладка</string>
        </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <item>
+         <widget class="QTextEdit" name="debugTextEdit">
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="debugPushButton">
+          <property name="text">
+           <string>Отладить</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </widget>
      </widget>
     </item>
@@ -171,7 +187,7 @@
     <property name="title">
      <string>&amp;Правка</string>
     </property>
-    <addaction name="actionFind"/>
+    <addaction name="actionFindClient"/>
     <addaction name="actionFindConsultations"/>
     <addaction name="separator"/>
     <addaction name="actionAddClient"/>
@@ -204,9 +220,9 @@
     <string>Сохранить справочник Клиенты</string>
    </property>
   </action>
-  <action name="actionFind">
+  <action name="actionFindClient">
    <property name="text">
-    <string>Найти</string>
+    <string>Найти клиента</string>
    </property>
   </action>
   <action name="actionFindConsultations">

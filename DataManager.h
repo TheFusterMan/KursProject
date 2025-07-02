@@ -157,11 +157,11 @@ static class DataManager {
 private:
     static Validator validator;
 
-    inline static HashTable clients_table{ 16 };
-    inline static QVector<Client> clients_array;
+    inline static HashTable clients_table{ 10 };
+    inline static CustomVector<Client> clients_array;
 
     inline static AVLTree<quint64> consultations_tree;
-    inline static QVector<Consultation> consultations_array;
+    inline static CustomVector<Consultation> consultations_array;
 
     inline static AVLTree<Date> filter_tree_by_date;
     //inline static AVLTree<FIO> filter_tree_by_client_fio;
@@ -195,7 +195,7 @@ private:
     //    }
     //}
 
-    static void traverseForReport(TreeNode<Date>* node, const FilterCriteria& criteria, QVector<ReportEntry>& reportData) {
+    static void traverseForReport(TreeNode<Date>* node, const FilterCriteria& criteria, CustomVector<ReportEntry>& reportData) {
         if (!node) {
             return;
         }
@@ -289,8 +289,8 @@ private:
         }
     }
 public:
-    static QVector<ReportEntry> generateReport(const FilterCriteria& criteria) {
-        QVector<ReportEntry> reportData;
+    static CustomVector<ReportEntry> generateReport(const FilterCriteria& criteria) {
+        CustomVector<ReportEntry> reportData;
         traverseForReport(filter_tree_by_date.root, criteria, reportData);
         return reportData;
     }
@@ -459,7 +459,7 @@ public:
         int indexToDeleteInClients = clientToDelete - &clients_array[0];
 
         bool consultationsWereRemoved = false;
-        QVector<int> indices = findConsultationIndicesByINN(innToDelete_q64);
+        CustomVector<int> indices = findConsultationIndicesByINN(innToDelete_q64);
         std::sort(indices.rbegin(), indices.rend());
         for (int index : indices) {
             deleteConsultation(index);
@@ -507,8 +507,8 @@ public:
         return true;
     }
 
-    static const QVector<Client>& getClients() { return clients_array; }
-    static const QVector<Consultation>& getConsultations() { return consultations_array; }
+    static const CustomVector<Client>& getClients() { return clients_array; }
+    static const CustomVector<Consultation>& getConsultations() { return consultations_array; }
 
     static const Client* findClientByINN(quint64 inn) {
         const Item* foundItem = clients_table.search(inn);
@@ -521,8 +521,8 @@ public:
         return nullptr;
     }
 
-    static QVector<int> findConsultationIndicesByINN(quint64 inn) {
-        QVector<int> indices;
+    static CustomVector<int> findConsultationIndicesByINN(quint64 inn) {
+        CustomVector<int> indices;
         TreeNode<quint64>* node = consultations_tree.find(inn);
         if (node) {
             ListNode* current = node->head;
@@ -533,4 +533,9 @@ public:
         }
         return indices;
     }
+
+    // ОТЛАДКА
+    static QString getClientsTableState() { return QString::fromStdString(clients_table.toString()); }
+    //static QString getConsultationsTreeState() { return clients_table.toString(); }
+    //static QString getFilterTreeByDateState() { return clients_table.toString(); }
 };

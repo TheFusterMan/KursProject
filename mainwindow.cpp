@@ -32,8 +32,7 @@ MainWindow::MainWindow(QWidget* parent)
     connect(ui->actionDeleteClient, &QAction::triggered, this, &MainWindow::onDeleteClientRecord);
     connect(ui->actionLoadClients, &QAction::triggered, this, &MainWindow::onLoadClients);
     connect(ui->actionSaveClients, &QAction::triggered, this, &MainWindow::onSaveClients);
-    //connect(ui->actionDebug, &QAction::triggered, this, &MainWindow::onDebug);
-    connect(ui->actionFind, &QAction::triggered, this, &MainWindow::onFind);
+    connect(ui->actionFindClient, &QAction::triggered, this, &MainWindow::onFindClient);
     connect(ui->actionExit, &QAction::triggered, this, &QWidget::close);
     connect(ui->actionAbout, &QAction::triggered, this, &MainWindow::onAbout);
 
@@ -45,6 +44,7 @@ MainWindow::MainWindow(QWidget* parent)
 
     connect(ui->sellersTable, &QTableWidget::customContextMenuRequested, this, &MainWindow::showClientContextMenu);
     connect(ui->salesTable, &QTableWidget::customContextMenuRequested, this, &MainWindow::showConsultationContextMenu);
+    connect(ui->debugPushButton, &QPushButton::clicked, this, &MainWindow::onDebugButtonClicked);
 
     ui->mainTabWidget->setCurrentIndex(0);
 }
@@ -344,9 +344,7 @@ void MainWindow::onSaveConsultations()
     }
 }
 
-void MainWindow::onDebug() { qDebug() << u8"Нажато 'Отладка'!"; }
-
-void MainWindow::onFind()
+void MainWindow::onFindClient()
 {
     bool ok;
     QString innStr = QInputDialog::getText(this,
@@ -409,4 +407,25 @@ void MainWindow::onAbout()
         u8"О программе",
         u8"Это приложение для курсовой работы, демонстрирующее\n"
         u8"возможности компоновки виджетов в Qt.");
+}
+
+void MainWindow::onDebugButtonClicked()
+{
+    QString debugOutput;
+
+    debugOutput += "========== ХЕШ-ТАБЛИЦА КЛИЕНТОВ (по ИНН) ==========\n";
+    debugOutput += DataManager::getClientsTableState();
+    debugOutput += "\n\n";
+
+    debugOutput += "========== ДЕРЕВО КОНСУЛЬТАЦИЙ (по ИНН клиента) ==========\n";
+    //debugOutput += DataManager::getConsultationsTreeState();
+    debugOutput += "\n\n";
+
+    debugOutput += "========== ДЕРЕВО ФИЛЬТРАЦИИ (по дате) ==========\n";
+    //debugOutput += DataManager::getFilterTreeByDateState();
+
+    // Устанавливаем собранный текст в QTextEdit
+    ui->debugTextEdit->setPlainText(debugOutput);
+
+    QMessageBox::information(this, "Отладка", "Данные структур выведены на вкладку 'Отладка'.");
 }

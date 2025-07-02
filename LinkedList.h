@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <clocale>
+
 using namespace std;
 
 struct ListNode {
@@ -78,7 +79,7 @@ public:
         return false;
     }
 
-    //для печати списка
+    // для печати списка
     string toString(ListNode* head) const {
         string result = "";
         ListNode* current = head;

@@ -27,8 +27,7 @@ private slots:
     void onDeleteClientRecord();
     void onLoadClients();
     void onSaveClients();
-    void onDebug();
-    void onFind();
+    void onFindClient();
     void onAbout();
 
     void showClientContextMenu(const QPoint& pos);
@@ -41,6 +40,8 @@ private slots:
     void onFindConsultations();
 
     void onGenerateReport();
+
+    void onDebugButtonClicked();
 private:
     Ui::KursProjectClass* ui;
 };

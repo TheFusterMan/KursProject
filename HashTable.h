@@ -1,5 +1,6 @@
-#include <iostream> // To interact with users
+Ôªø#include <iostream> // To interact with users
 #include <string> // Strings are sometimes
+#include <sstream>
 
 using namespace std;
 
@@ -32,7 +33,17 @@ public:
 
 	unsigned long long keyToNum(const int& key) const {
 		unsigned long long num = 0;
-		for (char c : to_string(key)) num += c;
+		int temp_key = key;
+
+		if (temp_key < 0) {
+			temp_key = -temp_key;
+		}
+
+		while (temp_key > 0) {
+			num += temp_key % 10;
+			temp_key /= 10;
+		}
+
 		return num;
 	}
 
@@ -144,21 +155,21 @@ public:
 		while (attempt < capacity) {
 			int probedIndex = secondaryHash(initIndex, attempt);
 
-			// ≈ÒÎË Ì‡ÚÍÌÛÎËÒ¸ Ì‡ ÔÛÒÚÛ˛ ˇ˜ÂÈÍÛ, ÁÌ‡˜ËÚ ÍÎ˛˜‡ ‚ Ú‡·ÎËˆÂ ÌÂÚ
+			// –ï—Å–ª–∏ –Ω–∞—Ç–∫–Ω—É–ª–∏—Å—å –Ω–∞ –ø—É—Å—Ç—É—é —è—á–µ–π–∫—É, –∑–Ω–∞—á–∏—Ç –∫–ª—é—á–∞ –≤ —Ç–∞–±–ª–∏—Ü–µ –Ω–µ—Ç
 			if (table[probedIndex].status == 0) {
 				return false;
 			}
 
-			// ≈ÒÎË Ì‡¯ÎË ˇ˜ÂÈÍÛ Ò ÌÛÊÌ˚Ï ÍÎ˛˜ÓÏ
+			// –ï—Å–ª–∏ –Ω–∞—à–ª–∏ —è—á–µ–π–∫—É —Å –Ω—É–∂–Ω—ã–º –∫–ª—é—á–æ–º
 			if (table[probedIndex].status == 1 && table[probedIndex].key == key) {
-				table[probedIndex].index = new_index; // Œ·ÌÓ‚ÎˇÂÏ ËÌ‰ÂÍÒ
-				return true; // ”ÒÔÂı
+				table[probedIndex].index = new_index; // –û–±–Ω–æ–≤–ª—è–µ–º –∏–Ω–¥–µ–∫—Å
+				return true; // –£—Å–ø–µ—Ö
 			}
 
 			attempt++;
 		}
 
-		return false; //  Î˛˜ ÌÂ Ì‡È‰ÂÌ ÔÓÒÎÂ ÔÓÎÌÓ„Ó ÔÓıÓ‰‡
+		return false; // –ö–ª—é—á –Ω–µ –Ω–∞–π–¥–µ–Ω –ø–æ—Å–ª–µ –ø–æ–ª–Ω–æ–≥–æ –ø—Ä–æ—Ö–æ–¥–∞
 	}
 
 	void resize(bool isExpands) {
@@ -208,6 +219,37 @@ public:
 		}
 
 		return nullptr;
+	}
+
+	string toString() const {
+		stringstream ss;
+
+		ss << "--- –•—ç—à-—Ç–∞–±–ª–∏—Ü–∞ —Å–æ–¥–µ—Ä–∂–∏—Ç " << size << " –∏–∑ " << capacity << " –∑–∞–ø–∏—Å–µ–π (" + std::to_string(static_cast<int>(size / capacity * 100)) + "% –∑–∞–Ω—è—Ç–æ) ---\n";
+
+		for (int i = 0; i < capacity; ++i) {
+			ss << "[" << i << "]: ";
+
+			unsigned long long hash = keyToNum(table[i].key); //–¥–ª—è –≤—ã–≤–æ–¥–∞
+			string squaredHash = to_string(hash * hash); //—Ö—ç—à–∞
+
+			ss << "–°—Ç–∞—Ç—É—Å: ";
+			switch (table[i].status) {
+			case 0:
+				ss << "0\n";
+				break;
+			case 1:
+				ss << "1 | –ò–ù–ù (–∫–ª—é—á): " << table[i].key  << " - " << primaryHash(table[i].key) << " - " << hash << " - " << squaredHash << " | –ò–Ω–¥–µ–∫—Å: " << table[i].index;
+				ss << "\n";
+				break;
+			case 2:
+				ss << "2 | –ò–ù–ù(–∫–ª—é—á) : " << table[i].key  << " - " << primaryHash(table[i].key) << " - " << hash << " - " << squaredHash << " | –ò–Ω–¥–µ–∫—Å : " << table[i].index;
+				ss << "\n";
+				break;
+			}
+		}
+
+		ss << "---------------------------------------------------------------------------\n";
+		return ss.str();
 	}
 
 	~HashTable() {

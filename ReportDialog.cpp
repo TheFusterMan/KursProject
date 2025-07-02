@@ -1,5 +1,6 @@
 ﻿#include "reportdialog.h" // Предполагается, что reportdialog.h существует
 #include "datamanager.h" // Используем DataManager
+#include "CustomVector.h"
 
 #include <QCheckBox>
 #include <QDateEdit>
@@ -99,7 +100,7 @@ void ReportDialog::onGenerateReport()
     criteria.client_fio = clientFioEdit->text().trimmed();
     criteria.lawyer_fio = lawyerFioEdit->text().trimmed();
 
-    QVector<ReportEntry> reportData = DataManager::generateReport(criteria);
+    CustomVector<ReportEntry> reportData = DataManager::generateReport(criteria);
 
     reportTable->setRowCount(0); // Очищаем таблицу перед заполнением
 
