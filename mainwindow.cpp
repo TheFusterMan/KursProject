@@ -392,7 +392,48 @@ void MainWindow::onFindClient()
 
 void MainWindow::onFindConsultations()
 {
-    QMessageBox::information(this, "Информация", "Эта функция пока не реализована.\nДля поиска воспользуйтесь загрузкой данных и визуальным осмотром таблицы.");
+    //bool ok;
+    //QString innStr = QInputDialog::getText(this,
+    //    u8"Найти консультации клиента",
+    //    u8"Введите ИНН клиента для поиска:",
+    //    QLineEdit::Normal,
+    //    "",
+    //    &ok);
+
+    //if (!ok || innStr.isEmpty()) {
+    //    return;
+    //}
+
+    //if (!Validator::validateINN(innStr)) {
+    //    QMessageBox::warning(this, u8"Ошибка ввода", u8"ИНН должен состоять ровно из 12 цифр.");
+    //    return;
+    //}
+
+    //quint64 innToFind = innStr.toULongLong();
+
+    //const CustomVector foundConsultations = DataManager::findConsultationIndicesByINN(innToFind);
+
+    //if (!foundConsultations.isEmpty()) {
+    //    QString message = QString(u8"Консультации найдены найден:\n\n"
+    //        u8"ИНН: %1\n"
+    //        u8"ФИО: %2\n"
+    //        u8"Телефон: %3")
+    //        .arg(foundClient->inn)
+    //        .arg(foundClient->fio.toString())
+    //        .arg(foundClient->phone);
+    //    QMessageBox::information(this, u8"Результат поиска", message);
+
+    //    for (int i = 0; i < ui->sellersTable->rowCount(); ++i) {
+    //        if (ui->sellersTable->item(i, 0)->text() == innStr) {
+    //            ui->sellersTable->selectRow(i);
+    //            break;
+    //        }
+    //    }
+
+    //}
+    //else {
+    //    QMessageBox::information(this, u8"Результат поиска", u8"Клиент с таким ИНН не найден.");
+    //}
 }
 
 void MainWindow::onGenerateReport()
@@ -418,13 +459,12 @@ void MainWindow::onDebugButtonClicked()
     debugOutput += "\n\n";
 
     debugOutput += "========== ДЕРЕВО КОНСУЛЬТАЦИЙ (по ИНН клиента) ==========\n";
-    //debugOutput += DataManager::getConsultationsTreeState();
+    debugOutput += DataManager::getConsultationsTreeState();
     debugOutput += "\n\n";
 
     debugOutput += "========== ДЕРЕВО ФИЛЬТРАЦИИ (по дате) ==========\n";
-    //debugOutput += DataManager::getFilterTreeByDateState();
+    debugOutput += DataManager::getFilterTreeByDateState();
 
-    // Устанавливаем собранный текст в QTextEdit
     ui->debugTextEdit->setPlainText(debugOutput);
 
     QMessageBox::information(this, "Отладка", "Данные структур выведены на вкладку 'Отладка'.");

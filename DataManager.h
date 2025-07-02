@@ -55,6 +55,11 @@ struct Date {
     }
 };
 
+inline ostream& operator<<(std::ostream& os, const Date& date) {
+    os << date.toString().toStdString();
+    return os;
+}
+
 struct FIO {
     QString f;
     QString i;
@@ -536,6 +541,6 @@ public:
 
     // ОТЛАДКА
     static QString getClientsTableState() { return QString::fromStdString(clients_table.toString()); }
-    //static QString getConsultationsTreeState() { return clients_table.toString(); }
-    //static QString getFilterTreeByDateState() { return clients_table.toString(); }
+    static QString getConsultationsTreeState() { return QString::fromStdString(consultations_tree.toString(consultations_tree.root)); }
+    static QString getFilterTreeByDateState() { return  QString::fromStdString(filter_tree_by_date.toString(filter_tree_by_date.root)); }
 };

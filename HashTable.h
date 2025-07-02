@@ -5,9 +5,9 @@
 using namespace std;
 
 struct Item {
-	ulong key; 
+	unsigned long long key; 
 	int index;
-	int status; //0 - free, 1 - occupied, 2 - deleted
+	int status; //0 - свободна, 1 - занята, 2 - удалена
 
 	Item() : key(), index(-1), status(0) {}
 	Item(const int& _key, int _index) : key(_key), index(_index) {}
@@ -31,7 +31,7 @@ public:
 		table = new Item[capacity];
 	}
 
-	unsigned long long keyToNum(const int& key) const {
+	unsigned long long keyToNum(const unsigned long long& key) const {
 		unsigned long long num = 0;
 		int temp_key = key;
 
@@ -47,7 +47,7 @@ public:
 		return num;
 	}
 
-	unsigned long long primaryHash(const int& key) const {
+	unsigned long long primaryHash(const unsigned long long& key) const {
 		unsigned long long num = keyToNum(key);
 		string sqNumStr = to_string(num * num);
 
@@ -69,7 +69,7 @@ public:
 		return (initHash + attempt * k1 + attempt * attempt * k2) % capacity;
 	}
 
-	bool add(const int& key, int index) {
+	bool add(const unsigned long long& key, int index) {
 		int initIndex = primaryHash(key);
 		int potentialIndex = -1;
 		int attempt = 0;
@@ -123,7 +123,7 @@ public:
 		return false;
 	}
 
-	bool remove(const int& key) {
+	bool remove(const unsigned long long& key) {
 		int index = primaryHash(key);
 		int attempt = 0;
 
@@ -148,7 +148,7 @@ public:
 		return false;
 	}
 
-	bool updateIndex(const int& key, int new_index) {
+	bool updateIndex(const unsigned long long& key, int new_index) {
 		int initIndex = primaryHash(key);
 		int attempt = 0;
 
@@ -205,7 +205,7 @@ public:
 		delete[] oldTable;
 	}
 
-	const Item* search(const int& key) const {
+	const Item* search(const unsigned long long& key) const {
 		int index = primaryHash(key);
 		int attempt = 0;
 
@@ -242,7 +242,7 @@ public:
 				ss << "\n";
 				break;
 			case 2:
-				ss << "2 | ИНН(ключ) : " << table[i].key  << " - " << primaryHash(table[i].key) << " - " << hash << " - " << squaredHash << " | Индекс : " << table[i].index;
+				ss << "2 | ИНН (ключ) : " << table[i].key  << " - " << primaryHash(table[i].key) << " - " << hash << " - " << squaredHash << " | Индекс : " << table[i].index;
 				ss << "\n";
 				break;
 			}

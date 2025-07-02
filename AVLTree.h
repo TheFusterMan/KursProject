@@ -1,5 +1,6 @@
 ﻿#include <iostream>
 #include <string>
+#include <iomanip>
 
 #include <LinkedList.h>
 
@@ -8,7 +9,7 @@ using namespace std;
 template <typename TKey>
 struct TreeNode {
     TKey key;
-    IndexList indexList;
+    LinkedList indexList;
     ListNode* head;
     int balanceFactor;
     TreeNode<TKey>* left;
@@ -284,4 +285,30 @@ public:
         tree.root = nullptr;
         cout << "Дерево инициализировано (пустое).\n";
     }
+
+    // печать
+    string toString(TreeNode<TKey>* node, int indent = 0) {
+        stringstream ss;
+        if (node != nullptr) {
+            if (node->right) {
+                ss << toString(node->right, indent + 8);
+            }
+
+            if (indent) {
+                ss << setw(indent) << ' ';
+            }
+            if (node->right) {
+                ss << " /" << "\n" << setw(indent) << ' ';
+            }
+
+            ss << node->key << " (" << node->indexList.toString(node->head) << ")" << "\n";
+
+            if (node->left) {
+                ss << setw(indent) << ' ' << " \\" << "\n";
+                ss << toString(node->left, indent + 8);
+            }
+        }
+        return ss.str();
+    }
+
 };

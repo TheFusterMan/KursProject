@@ -9,7 +9,7 @@ struct ListNode {
     ListNode* next;
 };
 
-class IndexList {
+class LinkedList {
 public:
     ListNode* init() {
         return nullptr;
