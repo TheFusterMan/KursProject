@@ -24,7 +24,7 @@
        <enum>Qt::LeftToRight</enum>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="tab">
        <property name="accessibleName">
@@ -194,6 +194,8 @@
     <addaction name="actionAddConsultation"/>
     <addaction name="actionDeleteClient"/>
     <addaction name="actionDeleteConsultation"/>
+    <addaction name="separator"/>
+    <addaction name="action_2"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -268,6 +270,11 @@
   <action name="actionAbout">
    <property name="text">
     <string>О программе</string>
+   </property>
+  </action>
+  <action name="action_2">
+   <property name="text">
+    <string>Отладка</string>
    </property>
   </action>
  </widget>
