@@ -136,27 +136,6 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="reportTab">
-       <attribute name="title">
-        <string>Отладка</string>
-       </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_2">
-        <item>
-         <widget class="QTextEdit" name="debugTextEdit">
-          <property name="readOnly">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="debugPushButton">
-          <property name="text">
-           <string>Отладить</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
      </widget>
     </item>
    </layout>

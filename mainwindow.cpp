@@ -19,6 +19,11 @@
 #include <QIcon>
 #include <QPoint>
 #include <QDebug>
+// ДОБАВЛЕНО: Эти заголовки нужны для создания диалога программно
+#include <QDialog>
+#include <QTextEdit>
+#include <QFontDatabase>
+
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent), ui(new Ui::KursProjectClass)
@@ -44,7 +49,12 @@ MainWindow::MainWindow(QWidget* parent)
 
     connect(ui->sellersTable, &QTableWidget::customContextMenuRequested, this, &MainWindow::showClientContextMenu);
     connect(ui->salesTable, &QTableWidget::customContextMenuRequested, this, &MainWindow::showConsultationContextMenu);
-    connect(ui->debugPushButton, &QPushButton::clicked, this, &MainWindow::onDebugButtonClicked);
+
+    // ЭТА СТРОКА БЫЛА ИСТОЧНИКОМ ОШИБКИ, ТАК КАК ui->debugPushButton БОЛЬШЕ НЕ СУЩЕСТВУЕТ
+    // connect(ui->debugPushButton, &QPushButton::clicked, this, &MainWindow::onDebugActionTriggered); // <--- УДАЛИТЕ ИЛИ ЗАКОММЕНТИРУЙТЕ ЭТУ СТРОКУ
+
+    // Этот connect остается, так как action_2 все еще существует в UI файле (в меню "Правка")
+    connect(ui->action_2, &QAction::triggered, this, &MainWindow::onDebugActionTriggered);
 
     ui->mainTabWidget->setCurrentIndex(0);
 }
@@ -54,6 +64,7 @@ MainWindow::~MainWindow()
     delete ui; // Освобождаем память, выделенную для UI
 }
 
+// ... (весь ваш код до onAbout без изменений) ...
 
 void MainWindow::updateClientsTable()
 {
@@ -392,48 +403,7 @@ void MainWindow::onFindClient()
 
 void MainWindow::onFindConsultations()
 {
-    //bool ok;
-    //QString innStr = QInputDialog::getText(this,
-    //    u8"Найти консультации клиента",
-    //    u8"Введите ИНН клиента для поиска:",
-    //    QLineEdit::Normal,
-    //    "",
-    //    &ok);
-
-    //if (!ok || innStr.isEmpty()) {
-    //    return;
-    //}
-
-    //if (!Validator::validateINN(innStr)) {
-    //    QMessageBox::warning(this, u8"Ошибка ввода", u8"ИНН должен состоять ровно из 12 цифр.");
-    //    return;
-    //}
-
-    //quint64 innToFind = innStr.toULongLong();
-
-    //const CustomVector foundConsultations = DataManager::findConsultationIndicesByINN(innToFind);
-
-    //if (!foundConsultations.isEmpty()) {
-    //    QString message = QString(u8"Консультации найдены найден:\n\n"
-    //        u8"ИНН: %1\n"
-    //        u8"ФИО: %2\n"
-    //        u8"Телефон: %3")
-    //        .arg(foundClient->inn)
-    //        .arg(foundClient->fio.toString())
-    //        .arg(foundClient->phone);
-    //    QMessageBox::information(this, u8"Результат поиска", message);
-
-    //    for (int i = 0; i < ui->sellersTable->rowCount(); ++i) {
-    //        if (ui->sellersTable->item(i, 0)->text() == innStr) {
-    //            ui->sellersTable->selectRow(i);
-    //            break;
-    //        }
-    //    }
-
-    //}
-    //else {
-    //    QMessageBox::information(this, u8"Результат поиска", u8"Клиент с таким ИНН не найден.");
-    //}
+    // ... (код этой функции оставлен без изменений)
 }
 
 void MainWindow::onGenerateReport()
@@ -450,22 +420,42 @@ void MainWindow::onAbout()
         u8"возможности компоновки виджетов в Qt.");
 }
 
-void MainWindow::onDebugButtonClicked()
+// ИЗМЕНЕНО: Старая функция onDebugButtonClicked переименована и полностью переписана
+void MainWindow::onDebugActionTriggered()
 {
+    // 1. Собираем отладочную информацию, как и раньше
     QString debugOutput;
-
     debugOutput += "========== ХЕШ-ТАБЛИЦА КЛИЕНТОВ (по ИНН) ==========\n";
     debugOutput += DataManager::getClientsTableState();
     debugOutput += "\n\n";
-
     debugOutput += "========== ДЕРЕВО КОНСУЛЬТАЦИЙ (по ИНН клиента) ==========\n";
     debugOutput += DataManager::getConsultationsTreeState();
     debugOutput += "\n\n";
-
     debugOutput += "========== ДЕРЕВО ФИЛЬТРАЦИИ (по дате) ==========\n";
     debugOutput += DataManager::getFilterTreeByDateState();
 
-    ui->debugTextEdit->setPlainText(debugOutput);
+    // 2. Создаем новое диалоговое окно программно
+    QDialog* debugDialog = new QDialog(this); // Указываем родителя для корректного управления памятью
+    debugDialog->setWindowTitle(u8"Окно отладки");
+    debugDialog->resize(800, 600); // Задаем удобный размер
 
-    QMessageBox::information(this, "Отладка", "Данные структур выведены на вкладку 'Отладка'.");
+    // 3. Создаем компоновщик для окна
+    QVBoxLayout* layout = new QVBoxLayout(debugDialog);
+
+    // 4. Создаем текстовое поле для вывода информации
+    QTextEdit* textEdit = new QTextEdit();
+    textEdit->setReadOnly(true); // Только для чтения
+    textEdit->setPlainText(debugOutput); // Помещаем в него собранный текст
+
+    // Для лучшей читаемости используем моноширинный шрифт
+    textEdit->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
+
+    // 5. Добавляем текстовое поле в компоновщик
+    layout->addWidget(textEdit);
+
+    // 6. Показываем окно в модальном режиме
+    debugDialog->exec();
+
+    // 7. После закрытия окна, удаляем его, чтобы избежать утечек памяти
+    delete debugDialog;
 }

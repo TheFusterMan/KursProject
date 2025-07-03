@@ -41,7 +41,7 @@ private slots:
 
     void onGenerateReport();
 
-    void onDebugButtonClicked();
+    void onDebugActionTriggered();
 private:
     Ui::KursProjectClass* ui;
 };
