@@ -9,10 +9,9 @@ AddClientDialog::AddClientDialog(QWidget* parent) : QDialog(parent)
 {
     setWindowTitle(u8"Добавить клиента");
 
+    // ИЗМЕНЕНО: Создаем одно поле для ФИО вместо трех
+    fioEdit = new QLineEdit(this);
     innEdit = new QLineEdit(this);
-    nameEdit = new QLineEdit(this);
-    surnameEdit = new QLineEdit(this);
-    patronymicEdit = new QLineEdit(this);
     phoneEdit = new QLineEdit(this);
 
     buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
@@ -20,10 +19,9 @@ AddClientDialog::AddClientDialog(QWidget* parent) : QDialog(parent)
     connect(buttonBox, &QDialogButtonBox::accepted, this, &AddClientDialog::accept);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &AddClientDialog::reject);
 
+    // ИЗМЕНЕНО: Обновляем форму
     QFormLayout* formLayout = new QFormLayout;
-    formLayout->addRow(u8"Фамилия:", nameEdit);
-    formLayout->addRow(u8"Имя:", surnameEdit);
-    formLayout->addRow(u8"Отчество:", patronymicEdit);
+    formLayout->addRow(u8"ФИО (через пробел):", fioEdit);
     formLayout->addRow(u8"ИНН (12 цифр):", innEdit);
     formLayout->addRow(u8"Телефон (формат 89...):", phoneEdit);
 
@@ -35,13 +33,14 @@ AddClientDialog::AddClientDialog(QWidget* parent) : QDialog(parent)
 }
 
 QString AddClientDialog::getINN() const {
-    return innEdit->text();
+    return innEdit->text().trimmed();
 }
 
 QString AddClientDialog::getFIO() const {
-    return nameEdit->text() + " " + surnameEdit->text() + " " + patronymicEdit->text();
+    // ИЗМЕНЕНО: Просто возвращаем текст из одного поля
+    return fioEdit->text().trimmed();
 }
 
 QString AddClientDialog::getPhone() const {
-    return phoneEdit->text();
+    return phoneEdit->text().trimmed();
 }

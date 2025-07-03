@@ -450,27 +450,28 @@ public:
         return false;
     }
 
-    static bool deleteClient(const QString& inn, const QString& fio, const QString& phone)
+    static bool deleteClientByINN(const QString& inn)
     {
-        if (!validator.validateINN(inn) || !validator.validateFIO(fio) || !validator.validatePhone(phone)) return false;
+        if (!validator.validateINN(inn)) return false;
 
         quint64 innToDelete_q64 = inn.toULongLong();
         const Client* clientToDelete = findClientByINN(innToDelete_q64);
 
-        if (!clientToDelete || clientToDelete->fio.toString() != fio || clientToDelete->phone != phone.toULongLong()) {
-            qInfo() << "Клиент не найден или данные не совпадают. Удаление отменено.";
+        if (!clientToDelete) {
+            qInfo() << "Клиент с ИНН" << inn << "не найден. Удаление отменено.";
             return false;
         }
-        int indexToDeleteInClients = clientToDelete - &clients_array[0];
 
-        bool consultationsWereRemoved = false;
-        CustomVector<int> indices = findConsultationIndicesByINN(innToDelete_q64);
-        std::sort(indices.rbegin(), indices.rend());
-        for (int index : indices) {
+        // Сначала удаляем все связанные консультации
+        CustomVector<int> indicesToDelete = findConsultationIndicesByINN(innToDelete_q64);
+        // Важно: сортируем индексы в обратном порядке, чтобы не сдвигать оставшиеся
+        std::sort(indicesToDelete.rbegin(), indicesToDelete.rend());
+        for (int index : indicesToDelete) {
             deleteConsultation(index);
-            consultationsWereRemoved = true;
         }
 
+        // Теперь удаляем самого клиента
+        int indexToDeleteInClients = clientToDelete - &clients_array[0];
         int lastClientIndex = clients_array.size() - 1;
         if (indexToDeleteInClients < lastClientIndex) {
             const Client& lastClient = clients_array.last();
@@ -479,7 +480,8 @@ public:
         }
         clients_table.remove(innToDelete_q64);
         clients_array.removeLast();
-        qInfo() << "Клиент с ИНН" << inn << "успешно удален.";
+
+        qInfo() << "Клиент с ИНН" << inn << "и все его консультации успешно удалены.";
         return true;
     }
 
@@ -510,6 +512,32 @@ public:
         filter_tree_by_date.remove(dateKeyToDelete, indexInArray);
 
         return true;
+    }
+    
+    static bool deleteConsultationByMatch(const QString& clientInn, const QString& lawyerFio, const QString& topic, const QString& date)
+    {
+        if (!validator.validateINN(clientInn) || !validator.validateFIO(lawyerFio) || !validator.validateDate(date)) {
+            return false;
+        }
+
+        quint64 inn = clientInn.toULongLong();
+        Date d(date);
+
+        for (int i = 0; i < consultations_array.size(); ++i) {
+            const auto& consultation = consultations_array.at(i);
+            if (consultation.client_inn == inn &&
+                consultation.lawyer_fio.toString() == lawyerFio &&
+                consultation.topic == topic &&
+                consultation.date == d)
+            {
+                // Нашли совпадение, вызываем существующую функцию удаления по индексу
+                return deleteConsultation(i);
+            }
+        }
+
+        // Если прошли весь цикл и не нашли совпадения
+        qWarning() << "Консультация с указанными параметрами не найдена.";
+        return false;
     }
 
     static const CustomVector<Client>& getClients() { return clients_array; }

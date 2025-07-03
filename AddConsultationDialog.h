@@ -1,6 +1,4 @@
 #pragma once
-#ifndef ADDCONSULTATIONDIALOG
-#define ADDCONSULTATIONDIALOG
 
 #include <QDialog>
 
@@ -21,12 +19,9 @@ public:
 
 private:
     QLineEdit* innEdit;
+    // ИЗМЕНЕНО: Заменяем три поля на одно
+    QLineEdit* fioEdit;
     QLineEdit* theameEdit;
-    QLineEdit* nameEdit;
-    QLineEdit* surnameEdit;
-    QLineEdit* patronymicEdit;
     QLineEdit* dateEdit;
     QDialogButtonBox* buttonBox;
 };
-
-#endif // ADDCONSULTATIONDIALOG

@@ -13,15 +13,9 @@ public:
     explicit DeleteClientDialog(QWidget* parent = nullptr);
 
     QString getINN() const;
-    QString getFIO() const;
-    QString getPhone() const;
 
 private:
+    // ИЗМЕНЕНО: Оставляем только поле для ИНН
     QLineEdit* innEdit;
-    QLineEdit* nameEdit;
-    QLineEdit* surnameEdit;
-    QLineEdit* patronymicEdit;
-    QLineEdit* phoneEdit;
-
     QDialogButtonBox* buttonBox;
 };

@@ -97,7 +97,12 @@
     <QtMoc Include="mainwindow.h" />
     <ClCompile Include="AddClientDialog.cpp" />
     <ClCompile Include="AddConsultationDialog.cpp" />
-    <ClCompile Include="DeleteClientDialog.cpp" />
+    <ClCompile Include="DeleteClientDialog.cpp">
+      <DynamicSource Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">input</DynamicSource>
+      <QtMocFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(Filename).moc</QtMocFileName>
+      <DynamicSource Condition="'$(Configuration)|$(Platform)'=='Release|x64'">input</DynamicSource>
+      <QtMocFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(Filename).moc</QtMocFileName>
+    </ClCompile>
     <ClCompile Include="DeleteConsultationDialog.cpp" />
     <ClCompile Include="mainwindow.cpp" />
     <ClCompile Include="main.cpp" />

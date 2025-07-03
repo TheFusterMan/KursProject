@@ -5,6 +5,7 @@
 class QLineEdit;
 class QDialogButtonBox;
 
+// НОВЫЙ КЛАСС: Диалог для удаления консультации по точному совпадению
 class DeleteConsultationDialog : public QDialog
 {
     Q_OBJECT
@@ -12,16 +13,15 @@ class DeleteConsultationDialog : public QDialog
 public:
     explicit DeleteConsultationDialog(QWidget* parent = nullptr);
 
-    QString getINN() const;
-    QString getFIO() const;
-    QString getPhone() const;
+    QString getClientINN() const;
+    QString getLawyerFIO() const;
+    QString getTopic() const;
+    QString getDate() const;
 
 private:
-    QLineEdit* innEdit;
-    QLineEdit* nameEdit;
-    QLineEdit* surnameEdit;
-    QLineEdit* patronymicEdit;
-    QLineEdit* phoneEdit;
-
+    QLineEdit* clientInnEdit;
+    QLineEdit* lawyerFioEdit;
+    QLineEdit* topicEdit;
+    QLineEdit* dateEdit;
     QDialogButtonBox* buttonBox;
 };

@@ -9,10 +9,9 @@ AddConsultationDialog::AddConsultationDialog(QWidget* parent) : QDialog(parent)
 {
     setWindowTitle(u8"Добавить консультацию");
 
+    // ИЗМЕНЕНО: Создаем одно поле для ФИО юриста
+    fioEdit = new QLineEdit(this);
     innEdit = new QLineEdit(this);
-    nameEdit = new QLineEdit(this);
-    surnameEdit = new QLineEdit(this);
-    patronymicEdit = new QLineEdit(this);
     theameEdit = new QLineEdit(this);
     dateEdit = new QLineEdit(this);
 
@@ -21,12 +20,11 @@ AddConsultationDialog::AddConsultationDialog(QWidget* parent) : QDialog(parent)
     connect(buttonBox, &QDialogButtonBox::accepted, this, &AddConsultationDialog::accept);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &AddConsultationDialog::reject);
 
+    // ИЗМЕНЕНО: Обновляем форму
     QFormLayout* formLayout = new QFormLayout;
-    formLayout->addRow(u8"Фамилия юриста:", nameEdit);
-    formLayout->addRow(u8"Имя юриста:", surnameEdit);
-    formLayout->addRow(u8"Отчество юриста:", patronymicEdit);
+    formLayout->addRow(u8"ФИО юриста:", fioEdit);
     formLayout->addRow(u8"Тема:", theameEdit);
-    formLayout->addRow(u8"ИНН (12 цифр):", innEdit);
+    formLayout->addRow(u8"ИНН клиента (12 цифр):", innEdit);
     formLayout->addRow(u8"Дата (DD.MM.YYYY):", dateEdit);
 
     QVBoxLayout* mainLayout = new QVBoxLayout;
@@ -37,17 +35,18 @@ AddConsultationDialog::AddConsultationDialog(QWidget* parent) : QDialog(parent)
 }
 
 QString AddConsultationDialog::getINN() const {
-    return innEdit->text();
+    return innEdit->text().trimmed();
 }
 
 QString AddConsultationDialog::getFIO() const {
-    return nameEdit->text() + " " + surnameEdit->text() + " " + patronymicEdit->text();
+    // ИЗМЕНЕНО: Просто возвращаем текст из одного поля
+    return fioEdit->text().trimmed();
 }
 
 QString AddConsultationDialog::getDate() const {
-    return dateEdit->text();
+    return dateEdit->text().trimmed();
 }
 
 QString AddConsultationDialog::getTheame() const {
-    return theameEdit->text();
+    return theameEdit->text().trimmed();
 }

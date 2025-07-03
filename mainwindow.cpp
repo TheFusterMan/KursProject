@@ -42,7 +42,7 @@ MainWindow::MainWindow(QWidget* parent)
     connect(ui->actionAbout, &QAction::triggered, this, &MainWindow::onAbout);
 
     connect(ui->actionAddConsultation, &QAction::triggered, this, &MainWindow::onAddConsultationRecord);
-    connect(ui->actionDeleteConsultation, &QAction::triggered, this, &MainWindow::onDeleteConsultationRecord);
+    connect(ui->actionDeleteConsultation, &QAction::triggered, this, &MainWindow::onDeleteConsultationBySearch);
     connect(ui->actionLoadConsultations, &QAction::triggered, this, &MainWindow::onLoadConsultations);
     connect(ui->actionSaveConsultations, &QAction::triggered, this, &MainWindow::onSaveConsultations);
     connect(ui->actionFindConsultations, &QAction::triggered, this, &MainWindow::onFindConsultations);
@@ -123,17 +123,18 @@ void MainWindow::showClientContextMenu(const QPoint& pos)
             QMessageBox::Yes | QMessageBox::No);
 
         if (reply == QMessageBox::Yes) {
+            // ИЗМЕНЕНО: Получаем только ИНН, так как для удаления больше ничего не нужно.
             QString inn = ui->sellersTable->item(row, 0)->text();
-            QString fio = ui->sellersTable->item(row, 1)->text();
-            QString phone = ui->sellersTable->item(row, 2)->text();
 
-            if (DataManager::deleteClient(inn, fio, phone)) {
+            // ИЗМЕНЕНО: Вызываем новую функцию deleteClientByINN, которая принимает только ИНН.
+            if (DataManager::deleteClientByINN(inn)) {
                 updateClientsTable();
-                updateConsultationsTable();
-                QMessageBox::information(this, u8"Успех", u8"Клиент успешно удален.");
+                updateConsultationsTable(); // Консультации тоже обновляем, т.к. они удаляются вместе с клиентом
+                QMessageBox::information(this, u8"Успех", u8"Клиент и его консультации успешно удалены.");
             }
             else {
-                QMessageBox::warning(this, u8"Ошибка", u8"Не удалось удалить клиента.");
+                // Сообщение об ошибке тоже можно сделать более точным
+                QMessageBox::warning(this, u8"Ошибка", u8"Не удалось удалить клиента. Возможно, он был изменен или удален ранее.");
             }
         }
         });
@@ -235,19 +236,47 @@ void MainWindow::onDeleteClientRecord()
     if (dialog.exec() == QDialog::Accepted)
     {
         QString inn = dialog.getINN();
-        QString fio = dialog.getFIO();
-        QString phone = dialog.getPhone();
 
-        if (DataManager::deleteClient(inn, fio, phone))
+        // Добавим подтверждение, т.к. операция стала более разрушительной
+        QMessageBox::StandardButton reply;
+        reply = QMessageBox::question(this, u8"Подтверждение удаления",
+            u8"Вы уверены, что хотите удалить клиента с ИНН " + inn + "?\n"
+            u8"Все связанные с ним консультации также будут удалены!",
+            QMessageBox::Yes | QMessageBox::No);
+
+        if (reply == QMessageBox::No) {
+            return;
+        }
+
+        if (DataManager::deleteClientByINN(inn))
         {
             updateClientsTable();
-            QMessageBox::information(this, u8"Успех", u8"Запись успешно удалена.");
+            updateConsultationsTable(); // Нужно обновить обе таблицы
+            QMessageBox::information(this, u8"Успех", u8"Клиент и все его консультации успешно удалены.");
         }
         else
         {
-            QMessageBox::warning(this, u8"Ошибка",
-                u8"Не удалось удалить запись.\n"
-                u8"Убедитесь, что все поля (ИНН, ФИО, телефон) введены верно и полностью совпадают с существующей записью.");
+            QMessageBox::warning(this, u8"Ошибка", u8"Не удалось найти клиента с указанным ИНН.");
+        }
+    }
+}
+
+void MainWindow::onDeleteConsultationBySearch()
+{
+    DeleteConsultationDialog dialog(this);
+    if (dialog.exec() == QDialog::Accepted)
+    {
+        QString inn = dialog.getClientINN();
+        QString fio = dialog.getLawyerFIO();
+        QString topic = dialog.getTopic();
+        QString date = dialog.getDate();
+
+        if (DataManager::deleteConsultationByMatch(inn, fio, topic, date)) {
+            updateConsultationsTable();
+            QMessageBox::information(this, u8"Успех", u8"Консультация успешно удалена.");
+        }
+        else {
+            QMessageBox::warning(this, u8"Ошибка", u8"Не удалось найти консультацию с указанными параметрами.");
         }
     }
 }

@@ -7,13 +7,12 @@
 
 DeleteConsultationDialog::DeleteConsultationDialog(QWidget* parent) : QDialog(parent)
 {
-    setWindowTitle(u8"Удалить клиента");
+    setWindowTitle(u8"Удалить консультацию (поиск)");
 
-    innEdit = new QLineEdit(this);
-    nameEdit = new QLineEdit(this);
-    surnameEdit = new QLineEdit(this);
-    patronymicEdit = new QLineEdit(this);
-    phoneEdit = new QLineEdit(this);
+    clientInnEdit = new QLineEdit(this);
+    lawyerFioEdit = new QLineEdit(this);
+    topicEdit = new QLineEdit(this);
+    dateEdit = new QLineEdit(this);
 
     buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
 
@@ -21,11 +20,10 @@ DeleteConsultationDialog::DeleteConsultationDialog(QWidget* parent) : QDialog(pa
     connect(buttonBox, &QDialogButtonBox::rejected, this, &DeleteConsultationDialog::reject);
 
     QFormLayout* formLayout = new QFormLayout;
-    formLayout->addRow(u8"Фамилия:", nameEdit);
-    formLayout->addRow(u8"Имя:", surnameEdit);
-    formLayout->addRow(u8"Отчество:", patronymicEdit);
-    formLayout->addRow(u8"ИНН (12 цифр):", innEdit);
-    formLayout->addRow(u8"Телефон (формат 89...):", phoneEdit);
+    formLayout->addRow(u8"ИНН клиента:", clientInnEdit);
+    formLayout->addRow(u8"ФИО юриста:", lawyerFioEdit);
+    formLayout->addRow(u8"Тема:", topicEdit);
+    formLayout->addRow(u8"Дата (DD.MM.YYYY):", dateEdit);
 
     QVBoxLayout* mainLayout = new QVBoxLayout;
     mainLayout->addLayout(formLayout);
@@ -34,14 +32,18 @@ DeleteConsultationDialog::DeleteConsultationDialog(QWidget* parent) : QDialog(pa
     setLayout(mainLayout);
 }
 
-QString DeleteConsultationDialog::getINN() const {
-    return innEdit->text().trimmed();
+QString DeleteConsultationDialog::getClientINN() const {
+    return clientInnEdit->text().trimmed();
 }
 
-QString DeleteConsultationDialog::getFIO() const {
-    return nameEdit->text().trimmed() + " " + surnameEdit->text().trimmed() + " " + patronymicEdit->text().trimmed();
+QString DeleteConsultationDialog::getLawyerFIO() const {
+    return lawyerFioEdit->text().trimmed();
 }
 
-QString DeleteConsultationDialog::getPhone() const {
-    return phoneEdit->text().trimmed();
+QString DeleteConsultationDialog::getTopic() const {
+    return topicEdit->text().trimmed();
+}
+
+QString DeleteConsultationDialog::getDate() const {
+    return dateEdit->text().trimmed();
 }

@@ -54,9 +54,6 @@
     <ClCompile Include="AddClientDialog.cpp">
       <Filter>Source Files\Forms</Filter>
     </ClCompile>
-    <ClCompile Include="DeleteClientDialog.cpp">
-      <Filter>Source Files\Forms</Filter>
-    </ClCompile>
     <ClCompile Include="DeleteConsultationDialog.cpp">
       <Filter>Source Files\Forms</Filter>
     </ClCompile>
@@ -65,6 +62,9 @@
     </ClCompile>
     <ClCompile Include="ReportDialog.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DeleteClientDialog.cpp">
+      <Filter>Source Files\Forms</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

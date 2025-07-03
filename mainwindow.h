@@ -3,6 +3,8 @@
 
 #include <QMainWindow>
 
+#include "DeleteConsultationDialog.h"
+
 #include "ui_KursProject.h"
 
 class QTabWidget;
@@ -35,6 +37,7 @@ private slots:
 
     void onAddConsultationRecord();
     void onDeleteConsultationRecord();
+    void onDeleteConsultationBySearch();
     void onLoadConsultations();
     void onSaveConsultations();
     void onFindConsultations();

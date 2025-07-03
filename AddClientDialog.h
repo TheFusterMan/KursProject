@@ -1,6 +1,4 @@
 #pragma once
-#ifndef ADDCLIENTDIALOG
-#define ADDCLIENTDIALOG
 
 #include <QDialog>
 
@@ -20,11 +18,8 @@ public:
 
 private:
     QLineEdit* innEdit;
-    QLineEdit* nameEdit;
-    QLineEdit* surnameEdit;
-    QLineEdit* patronymicEdit;
+    // ИЗМЕНЕНО: Заменяем три поля на одно
+    QLineEdit* fioEdit;
     QLineEdit* phoneEdit;
     QDialogButtonBox* buttonBox;
 };
-
-#endif // ADDCLIENTDIALOG
