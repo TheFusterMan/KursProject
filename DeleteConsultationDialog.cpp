@@ -7,7 +7,7 @@
 
 DeleteConsultationDialog::DeleteConsultationDialog(QWidget* parent) : QDialog(parent)
 {
-    setWindowTitle(u8"Удалить консультацию (поиск)");
+    setWindowTitle(u8"Удалить консультацию");
 
     clientInnEdit = new QLineEdit(this);
     lawyerFioEdit = new QLineEdit(this);
