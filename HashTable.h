@@ -205,11 +205,13 @@ public:
 		delete[] oldTable;
 	}
 
-	const Item* search(const unsigned long long& key) const {
+	const Item* search(const unsigned long long& key, int& steps) const {
 		int index = primaryHash(key);
 		int attempt = 0;
+		steps = 0;
 
 		while (attempt < capacity) {
+			steps += 1;
 			int probedIndex = secondaryHash(index, attempt);
 
 			if (table[probedIndex].status == 0) return nullptr;

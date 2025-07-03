@@ -208,82 +208,65 @@ private:
         bool dateFilterActive = criteria.date.year > 0;
 
         if (dateFilterActive) {
-            // Если фильтр по дате активен, используем быстрый поиск по дереву
             if (criteria.date < node->key) {
                 traverseForReport(node->left, criteria, reportData);
             }
             else if (criteria.date > node->key) {
                 traverseForReport(node->right, criteria, reportData);
             }
-            else { // criteria.date == node->key
-                // Нашли узел с нужной датой, обрабатываем все консультации в нем
+            else {
                 ListNode* currentIndexNode = node->head;
                 while (currentIndexNode) {
                     int consultationIndex = currentIndexNode->data;
                     if (consultationIndex < 0 || consultationIndex >= consultations_array.size()) {
-                        qWarning() << "Неверный индекс в дереве фильтрации:" << consultationIndex;
                         currentIndexNode = currentIndexNode->next;
                         continue;
                     }
                     const Consultation& consultation = consultations_array.at(consultationIndex);
+                    // ИЗМЕНЕНО: Вызываем версию функции с одним аргументом
                     const Client* client = findClientByINN(consultation.client_inn);
 
                     if (client) {
-                        // Применяем остальные фильтры
                         bool clientFioMatch = criteria.client_fio.isEmpty() ||
                             client->fio.toString().contains(criteria.client_fio, Qt::CaseInsensitive);
                         bool lawyerFioMatch = criteria.lawyer_fio.isEmpty() ||
                             consultation.lawyer_fio.toString().contains(criteria.lawyer_fio, Qt::CaseInsensitive);
 
                         if (clientFioMatch && lawyerFioMatch) {
-                            // Все фильтры совпали, добавляем объединенную запись в отчет
                             reportData.append({
-                                client->inn,
-                                client->fio,
-                                client->phone,
-                                consultation.topic,
-                                consultation.lawyer_fio,
-                                consultation.date
+                                client->inn, client->fio, client->phone,
+                                consultation.topic, consultation.lawyer_fio, consultation.date
                                 });
                         }
                     }
                     currentIndexNode = currentIndexNode->next;
                 }
-                // Дальнейший обход не нужен, т.к. искали конкретную дату
             }
         }
         else {
-            // Если фильтр по дате неактивен, делаем полный обход дерева
             traverseForReport(node->left, criteria, reportData);
 
-            // Обрабатываем текущий узел
             ListNode* currentIndexNode = node->head;
             while (currentIndexNode) {
                 int consultationIndex = currentIndexNode->data;
                 if (consultationIndex < 0 || consultationIndex >= consultations_array.size()) {
-                    qWarning() << "Неверный индекс в дереве фильтрации:" << consultationIndex;
                     currentIndexNode = currentIndexNode->next;
                     continue;
                 }
                 const Consultation& consultation = consultations_array.at(consultationIndex);
+                // ИЗМЕНЕНО: Вызываем версию функции с одним аргументом
                 const Client* client = findClientByINN(consultation.client_inn);
 
                 if (client) {
-                    // Применяем фильтры по ФИО
                     bool clientFioMatch = criteria.client_fio.isEmpty() ||
                         client->fio.toString().contains(criteria.client_fio, Qt::CaseInsensitive);
                     bool lawyerFioMatch = criteria.lawyer_fio.isEmpty() ||
                         consultation.lawyer_fio.toString().contains(criteria.lawyer_fio, Qt::CaseInsensitive);
 
                     if (clientFioMatch && lawyerFioMatch) {
-                        // Добавляем объединенную запись в отчет
                         reportData.append({
-                            client->inn,
-                            client->fio,
-                            client->phone,
-                            consultation.topic,
-                            consultation.lawyer_fio,
-                            consultation.date
+                            client->inn, client->fio, client->phone,
+                            consultation.topic, consultation.lawyer_fio, consultation.date
                             });
                     }
                 }
@@ -293,6 +276,7 @@ private:
             traverseForReport(node->right, criteria, reportData);
         }
     }
+
 public:
     static CustomVector<ReportEntry> generateReport(const FilterCriteria& criteria) {
         CustomVector<ReportEntry> reportData;
@@ -543,8 +527,8 @@ public:
     static const CustomVector<Client>& getClients() { return clients_array; }
     static const CustomVector<Consultation>& getConsultations() { return consultations_array; }
 
-    static const Client* findClientByINN(quint64 inn) {
-        const Item* foundItem = clients_table.search(inn);
+    static const Client* findClientByINN(quint64 inn, int& steps) {
+        const Item* foundItem = clients_table.search(inn, steps);
         if (foundItem) {
             int index = foundItem->index;
             if (index >= 0 && index < clients_array.size()) {
@@ -554,9 +538,14 @@ public:
         return nullptr;
     }
 
-    static CustomVector<int> findConsultationIndicesByINN(quint64 inn) {
+    static const Client* findClientByINN(quint64 inn) {
+        int dummy_steps = 0;
+        return findClientByINN(inn, dummy_steps);
+    }
+
+    static CustomVector<int> findConsultationIndicesByINN(quint64 inn, int& steps) {
         CustomVector<int> indices;
-        TreeNode<quint64>* node = consultations_tree.find(inn);
+        TreeNode<quint64>* node = consultations_tree.find(inn, steps);
         if (node) {
             ListNode* current = node->head;
             while (current) {
@@ -565,6 +554,11 @@ public:
             }
         }
         return indices;
+    }
+
+    static CustomVector<int> findConsultationIndicesByINN(quint64 inn) {
+        int dummy_steps = 0;
+        return findConsultationIndicesByINN(inn, dummy_steps);
     }
 
     // ОТЛАДКА

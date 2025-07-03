@@ -253,20 +253,23 @@ public:
     }
 
     //4. Поиск заданного элемента
-    TreeNode<TKey>* search(TreeNode<TKey>* node, const TKey& key) {
+    TreeNode<TKey>* search(TreeNode<TKey>* node, const TKey& key, int& steps) {
+        steps += 1;
+
         if (node == nullptr || node->key == key) {
             return node;
         }
 
         if (key < node->key) {
-            return search(node->left, key);
+            return search(node->left, key, steps);
         }
 
-        return search(node->right, key);
+        return search(node->right, key, steps);
     }
 
-    TreeNode<TKey>* find(const TKey& key) {
-        return search(root, key);
+    TreeNode<TKey>* find(const TKey& key, int& steps) {
+        steps = 0;
+        return search(root, key, steps);
     }
 
     //7. Освобождение памяти (удаление всего дерева)

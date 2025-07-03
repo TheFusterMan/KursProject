@@ -403,23 +403,27 @@ void MainWindow::onFindClient()
         return;
     }
 
+    int steps = 0;
     quint64 innToFind = innStr.toULongLong();
 
-    const Client* foundClient = DataManager::findClientByINN(innToFind);
+    const Client* foundClient = DataManager::findClientByINN(innToFind, steps);
 
     if (foundClient != nullptr) {
-        QString message = QString(u8"Клиент найден:\n\n"
-            u8"ИНН: %1\n"
-            u8"ФИО: %2\n"
-            u8"Телефон: %3")
+        QString message = QString(u8"Клиент найден за %1 шаг(ов):\n\n"
+            u8"ИНН: %2\n"
+            u8"ФИО: %3\n"
+            u8"Телефон: %4")
+            .arg(steps)
             .arg(foundClient->inn)
             .arg(foundClient->fio.toString())
             .arg(foundClient->phone);
         QMessageBox::information(this, u8"Результат поиска", message);
 
+        ui->sellersTable->clearSelection();
         for (int i = 0; i < ui->sellersTable->rowCount(); ++i) {
             if (ui->sellersTable->item(i, 0)->text() == innStr) {
                 ui->sellersTable->selectRow(i);
+                ui->mainTabWidget->setCurrentIndex(0);
                 break;
             }
         }
@@ -432,7 +436,68 @@ void MainWindow::onFindClient()
 
 void MainWindow::onFindConsultations()
 {
-    // ... (код этой функции оставлен без изменений)
+    bool ok;
+    QString innStr = QInputDialog::getText(this,
+        u8"Найти консультации клиента",
+        u8"Введите ИНН клиента для поиска его консультаций:",
+        QLineEdit::Normal,
+        "",
+        &ok);
+
+    if (!ok || innStr.isEmpty()) {
+        return;
+    }
+
+    if (!Validator::validateINN(innStr)) {
+        QMessageBox::warning(this, u8"Ошибка ввода", u8"ИНН должен состоять ровно из 12 цифр.");
+        return;
+    }
+
+    int steps = 0; // Переменная для подсчета шагов
+    quint64 innToFind = innStr.toULongLong();
+
+    // ИЗМЕНЕНО: Вызываем функцию с передачей счетчика шагов
+    CustomVector<int> indices = DataManager::findConsultationIndicesByINN(innToFind, steps);
+    const auto& allConsultations = DataManager::getConsultations();
+
+    if (!indices.isEmpty()) {
+        QString resultMessage = QString(u8"Найдено %1 консультаций за %2 шаг(ов):\n\n")
+            .arg(indices.size())
+            .arg(steps);
+
+        ui->salesTable->clearSelection(); // Очищаем предыдущее выделение
+
+        for (int index : indices) {
+            if (index >= 0 && index < allConsultations.size()) {
+                const Consultation& cons = allConsultations.at(index);
+                resultMessage += QString(u8"Тема: %1\nЮрист: %2\nДата: %3\n\n")
+                    .arg(cons.topic)
+                    .arg(cons.lawyer_fio.toString())
+                    .arg(cons.date.toString());
+
+                // Подсветка найденных строк в таблице
+                // Этот цикл предполагает, что строки в таблице соответствуют индексам в массиве
+                for (int i = 0; i < ui->salesTable->rowCount(); ++i) {
+                    if (ui->salesTable->item(i, 0)->text() == innStr &&
+                        ui->salesTable->item(i, 1)->text() == cons.topic &&
+                        ui->salesTable->item(i, 3)->text() == cons.date.toString())
+                    {
+                        ui->salesTable->selectRow(i);
+                    }
+                }
+            }
+        }
+
+        QMessageBox::information(this, u8"Результат поиска", resultMessage.trimmed());
+        ui->mainTabWidget->setCurrentIndex(1); // Переключаемся на вкладку с консультациями
+    }
+    else {
+        // Сообщение, если консультации не найдены (но поиск по дереву все равно был)
+        QString message = QString(u8"Консультации для клиента с ИНН %1 не найдены.\nПоиск выполнен за %2 шаг(ов).")
+            .arg(innStr)
+            .arg(steps);
+        QMessageBox::information(this, u8"Результат поиска", message);
+    }
 }
 
 void MainWindow::onGenerateReport()
