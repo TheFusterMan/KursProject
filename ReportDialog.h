@@ -19,16 +19,17 @@ public:
 
 private slots:
     void onGenerateReport();
+    void onSaveReport();
 
 private:
     void setupUi();
 
-    QCheckBox* dateFilterCheckbox;
-    QDateEdit* dateEdit;
+    QLineEdit* dateEdit;
     QLineEdit* clientFioEdit;
     QLineEdit* lawyerFioEdit;
 
     QPushButton* generateButton;
+    QPushButton* saveButton;
     QPushButton* closeButton;
 
     QTableWidget* reportTable;

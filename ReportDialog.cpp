@@ -25,25 +25,21 @@ ReportDialog::ReportDialog(QWidget* parent)
 
 void ReportDialog::setupUi()
 {
-    dateFilterCheckbox = new QCheckBox(u8"Фильтровать по дате:", this);
-    dateEdit = new QDateEdit(QDate::currentDate(), this);
-    dateEdit->setCalendarPopup(true);
-    dateEdit->setDisplayFormat("dd.MM.yyyy");
-    dateEdit->setEnabled(false);
-    dateFilterCheckbox->setChecked(false);
+    dateEdit = new QLineEdit(this);
+    dateEdit->setPlaceholderText(u8"Введите дату в формате ДД.ММ.ГГГГ");
 
     clientFioEdit = new QLineEdit(this);
-    clientFioEdit->setPlaceholderText(u8"Часть ФИО клиента (регистр не важен)");
+    clientFioEdit->setPlaceholderText(u8"Полное ФИО клиента (например, Иванов Иван Иванович)"); 
+
     lawyerFioEdit = new QLineEdit(this);
-    lawyerFioEdit->setPlaceholderText(u8"Часть ФИО юриста (регистр не важен)");
+    lawyerFioEdit->setPlaceholderText(u8"Полное ФИО юриста (например, Петров Петр Петрович)");
 
     QFormLayout* filterLayout = new QFormLayout();
     QHBoxLayout* dateLayout = new QHBoxLayout();
-    dateLayout->addWidget(dateFilterCheckbox);
     dateLayout->addWidget(dateEdit);
     dateLayout->addStretch();
 
-    filterLayout->addRow(dateLayout);
+    filterLayout->addRow(u8"Фильтровать по дате:", dateEdit);
     filterLayout->addRow(u8"ФИО клиента:", clientFioEdit);
     filterLayout->addRow(u8"ФИО юриста:", lawyerFioEdit);
 
@@ -63,11 +59,13 @@ void ReportDialog::setupUi()
     reportTable->setSortingEnabled(true); // Включим сортировку по колонкам
 
     generateButton = new QPushButton(u8"Сформировать отчет", this);
+    saveButton = new QPushButton(u8"Сохранить в файл", this);
     closeButton = new QPushButton(u8"Закрыть", this);
 
     QHBoxLayout* buttonLayout = new QHBoxLayout();
     buttonLayout->addStretch();
     buttonLayout->addWidget(generateButton);
+    buttonLayout->addWidget(saveButton);
     buttonLayout->addWidget(closeButton);
 
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
@@ -76,46 +74,52 @@ void ReportDialog::setupUi()
     mainLayout->addLayout(buttonLayout);
     setLayout(mainLayout);
 
-    connect(dateFilterCheckbox, &QCheckBox::toggled, dateEdit, &QDateEdit::setEnabled);
     connect(generateButton, &QPushButton::clicked, this, &ReportDialog::onGenerateReport);
+    connect(saveButton, &QPushButton::clicked, this, &ReportDialog::onSaveReport);
     connect(closeButton, &QPushButton::clicked, this, &ReportDialog::accept);
 }
 
-// --- НАЧАЛО ИЗМЕНЕНИЙ ---
 void ReportDialog::onGenerateReport()
 {
     FilterCriteria criteria;
 
-    if (dateFilterCheckbox->isChecked()) {
-        QDate qd = dateEdit->date();
-        criteria.date.day = qd.day();
-        criteria.date.month = qd.month();
-        criteria.date.year = qd.year();
+    criteria.client_fio = clientFioEdit->text().trimmed();
+    criteria.lawyer_fio = lawyerFioEdit->text().trimmed();
+    QString dateText = dateEdit->text().trimmed();
+
+    if (dateText.isEmpty() && criteria.client_fio.isEmpty() && criteria.lawyer_fio.isEmpty()) {
+        QMessageBox::information(this, u8"Результат", u8"Не задан ни один критерий.");
+        return;
+    }
+
+    if (!dateText.isEmpty()) {
+        if (Validator::validateDate(dateText)) {
+            criteria.date = Date(dateText);
+        }
+        else {
+            QMessageBox::warning(this, u8"Ошибка ввода", u8"Формат даты неверен. Пожалуйста, используйте ДД.ММ.ГГГГ.");
+            return;
+        }
     }
     else {
-        // Устанавливаем год в 0, чтобы показать, что фильтр по дате неактивен
         criteria.date.year = 0;
     }
 
-    criteria.client_fio = clientFioEdit->text().trimmed();
-    criteria.lawyer_fio = lawyerFioEdit->text().trimmed();
-
     CustomVector<ReportEntry> reportData = DataManager::generateReport(criteria);
 
-    reportTable->setRowCount(0); // Очищаем таблицу перед заполнением
+    reportTable->setRowCount(0);
 
     if (reportData.isEmpty()) {
         QMessageBox::information(this, u8"Результат", u8"По заданным критериям ничего не найдено.");
         return;
     }
 
-    reportTable->setSortingEnabled(false); // Отключаем сортировку на время заполнения для производительности
+    reportTable->setSortingEnabled(false);
 
     for (const auto& entry : reportData) {
         int newRow = reportTable->rowCount();
         reportTable->insertRow(newRow);
 
-        // Поля извлекаются напрямую из "плоской" структуры ReportEntry
         reportTable->setItem(newRow, 0, new QTableWidgetItem(entry.date.toString()));
         reportTable->setItem(newRow, 1, new QTableWidgetItem(entry.topic));
         reportTable->setItem(newRow, 2, new QTableWidgetItem(entry.lawyer_fio.toString()));
@@ -124,6 +128,40 @@ void ReportDialog::onGenerateReport()
         reportTable->setItem(newRow, 5, new QTableWidgetItem(QString::number(entry.phone)));
     }
 
-    reportTable->setSortingEnabled(true); // Включаем сортировку обратно
+    reportTable->setSortingEnabled(true);
 }
-// --- КОНЕЦ ИЗМЕНЕНИЙ ---
+
+void ReportDialog::onSaveReport()
+{
+    if (reportTable->rowCount() == 0) {
+        QMessageBox::warning(this, u8"Ошибка", u8"Отчет пуст. Нечего сохранять.");
+        return;
+    }
+
+    QFile file("report.txt");
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QMessageBox::critical(this, u8"Ошибка файла", u8"Не удалось открыть файл report.txt для записи.");
+        return;
+    }
+
+    QTextStream out(&file);
+
+    // Если заголовки нужны в выходном файле
+    // 
+    //QStringList headers;
+    //for (int i = 0; i < reportTable->columnCount(); ++i) {
+    //    headers << reportTable->horizontalHeaderItem(i)->text();
+    //}
+    //out << headers.join(";") << "\n";
+
+    for (int row = 0; row < reportTable->rowCount(); ++row) {
+        QStringList rowData;
+        for (int col = 0; col < reportTable->columnCount(); ++col) {
+            rowData << reportTable->item(row, col)->text();
+        }
+        out << rowData.join(";") << "\n";
+    }
+
+    file.close();
+    QMessageBox::information(this, u8"Успех", u8"Отчет успешно сохранен в файл report.txt.");
+}

@@ -223,14 +223,14 @@ private:
                         continue;
                     }
                     const Consultation& consultation = consultations_array.at(consultationIndex);
-                    // ИЗМЕНЕНО: Вызываем версию функции с одним аргументом
                     const Client* client = findClientByINN(consultation.client_inn);
 
                     if (client) {
                         bool clientFioMatch = criteria.client_fio.isEmpty() ||
-                            client->fio.toString().contains(criteria.client_fio, Qt::CaseInsensitive);
+                            (QString::compare(client->fio.toString(), criteria.client_fio, Qt::CaseInsensitive) == 0);
+
                         bool lawyerFioMatch = criteria.lawyer_fio.isEmpty() ||
-                            consultation.lawyer_fio.toString().contains(criteria.lawyer_fio, Qt::CaseInsensitive);
+                            (QString::compare(consultation.lawyer_fio.toString(), criteria.lawyer_fio, Qt::CaseInsensitive) == 0);
 
                         if (clientFioMatch && lawyerFioMatch) {
                             reportData.append({
@@ -254,14 +254,14 @@ private:
                     continue;
                 }
                 const Consultation& consultation = consultations_array.at(consultationIndex);
-                // ИЗМЕНЕНО: Вызываем версию функции с одним аргументом
                 const Client* client = findClientByINN(consultation.client_inn);
 
                 if (client) {
                     bool clientFioMatch = criteria.client_fio.isEmpty() ||
-                        client->fio.toString().contains(criteria.client_fio, Qt::CaseInsensitive);
+                        (QString::compare(client->fio.toString(), criteria.client_fio, Qt::CaseInsensitive) == 0);
+
                     bool lawyerFioMatch = criteria.lawyer_fio.isEmpty() ||
-                        consultation.lawyer_fio.toString().contains(criteria.lawyer_fio, Qt::CaseInsensitive);
+                        (QString::compare(consultation.lawyer_fio.toString(), criteria.lawyer_fio, Qt::CaseInsensitive) == 0);
 
                     if (clientFioMatch && lawyerFioMatch) {
                         reportData.append({
