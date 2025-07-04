@@ -106,13 +106,13 @@ void MainWindow::showClientContextMenu(const QPoint& pos)
     int row = item->row();
 
     QMenu contextMenu(this);
-    QAction* deleteAction = contextMenu.addAction(QIcon::fromTheme("edit-delete"), u8"Удалить клиента");
+    QAction* deleteAction = contextMenu.addAction(QIcon::fromTheme("edit-delete"), "Удалить клиента");
 
     connect(deleteAction, &QAction::triggered, [this, row]() {
         QMessageBox::StandardButton reply;
-        reply = QMessageBox::question(this, u8"Подтверждение удаления",
-            u8"Вы уверены, что хотите удалить этого клиента?\n"
-            u8"Все связанные с ним консультации также будут удалены.",
+        reply = QMessageBox::question(this, "Подтверждение удаления",
+            "Вы уверены, что хотите удалить этого клиента?\n"
+            "Все связанные с ним консультации также будут удалены.",
             QMessageBox::Yes | QMessageBox::No);
 
         if (reply == QMessageBox::Yes) {
@@ -123,11 +123,11 @@ void MainWindow::showClientContextMenu(const QPoint& pos)
             if (DataManager::deleteClientByINN(inn)) {
                 updateClientsTable();
                 updateConsultationsTable(); // Консультации тоже обновляем, т.к. они удаляются вместе с клиентом
-                QMessageBox::information(this, u8"Успех", u8"Клиент и его консультации успешно удалены.");
+                QMessageBox::information(this, "Успех", "Клиент и его консультации успешно удалены.");
             }
             else {
                 // Сообщение об ошибке тоже можно сделать более точным
-                QMessageBox::warning(this, u8"Ошибка", u8"Не удалось удалить клиента. Возможно, он был изменен или удален ранее.");
+                QMessageBox::warning(this, "Ошибка", "Не удалось удалить клиента. Возможно, он был изменен или удален ранее.");
             }
         }
         });
@@ -144,20 +144,20 @@ void MainWindow::showConsultationContextMenu(const QPoint& pos)
     int row = item->row();
 
     QMenu contextMenu(this);
-    QAction* deleteAction = contextMenu.addAction(QIcon::fromTheme("edit-delete"), u8"Удалить консультацию");
+    QAction* deleteAction = contextMenu.addAction(QIcon::fromTheme("edit-delete"), "Удалить консультацию");
 
     connect(deleteAction, &QAction::triggered, [this, row]() {
         QMessageBox::StandardButton reply;
-        reply = QMessageBox::question(this, u8"Подтверждение удаления", u8"Вы уверены, что хотите удалить эту консультацию?",
+        reply = QMessageBox::question(this, "Подтверждение удаления", "Вы уверены, что хотите удалить эту консультацию?",
             QMessageBox::Yes | QMessageBox::No);
 
         if (reply == QMessageBox::Yes) {
             if (DataManager::deleteConsultation(row)) {
                 updateConsultationsTable();
-                QMessageBox::information(this, u8"Успех", u8"Запись успешно удалена.");
+                QMessageBox::information(this, "Успех", "Запись успешно удалена.");
             }
             else {
-                QMessageBox::critical(this, u8"Ошибка", u8"Произошла ошибка при удалении записи.");
+                QMessageBox::critical(this, "Ошибка", "Произошла ошибка при удалении записи.");
             }
         }
         });
@@ -184,11 +184,11 @@ void MainWindow::onAddClientRecord()
             ui->sellersTable->setItem(newRowIndex, 1, new QTableWidgetItem(FIO));
             ui->sellersTable->setItem(newRowIndex, 2, new QTableWidgetItem(Phone));
 
-            QMessageBox::information(this, u8"Успех", u8"Запись успешно добавлена!");
+            QMessageBox::information(this, "Успех", "Запись успешно добавлена!");
         }
         else
         {
-            QMessageBox::warning(this, u8"Ошибка", u8"Не удалось добавить запись! Проверьте корректность данных.");
+            QMessageBox::warning(this, "Ошибка", "Не удалось добавить запись! Проверьте корректность данных.");
         }
     }
 }
@@ -214,11 +214,11 @@ void MainWindow::onAddConsultationRecord()
             ui->salesTable->setItem(newRowIndex, 2, new QTableWidgetItem(FIO));
             ui->salesTable->setItem(newRowIndex, 3, new QTableWidgetItem(Date));
 
-            QMessageBox::information(this, u8"Успех", u8"Запись успешно добавлена!");
+            QMessageBox::information(this, "Успех", "Запись успешно добавлена!");
         }
         else
         {
-            QMessageBox::warning(this, u8"Ошибка", u8"Не удалось добавить запись! Проверьте корректность данных.");
+            QMessageBox::warning(this, "Ошибка", "Не удалось добавить запись! Проверьте корректность данных.");
         }
     }
 }
@@ -232,9 +232,9 @@ void MainWindow::onDeleteClientRecord()
 
         // Добавим подтверждение, т.к. операция стала более разрушительной
         QMessageBox::StandardButton reply;
-        reply = QMessageBox::question(this, u8"Подтверждение удаления",
-            u8"Вы уверены, что хотите удалить клиента с ИНН " + inn + "?\n"
-            u8"Все связанные с ним консультации также будут удалены!",
+        reply = QMessageBox::question(this, "Подтверждение удаления",
+            "Вы уверены, что хотите удалить клиента с ИНН " + inn + "?\n"
+            "Все связанные с ним консультации также будут удалены!",
             QMessageBox::Yes | QMessageBox::No);
 
         if (reply == QMessageBox::No) {
@@ -245,11 +245,11 @@ void MainWindow::onDeleteClientRecord()
         {
             updateClientsTable();
             updateConsultationsTable(); // Нужно обновить обе таблицы
-            QMessageBox::information(this, u8"Успех", u8"Клиент и все его консультации успешно удалены.");
+            QMessageBox::information(this, "Успех", "Клиент и все его консультации успешно удалены.");
         }
         else
         {
-            QMessageBox::warning(this, u8"Ошибка", u8"Не удалось найти клиента с указанным ИНН.");
+            QMessageBox::warning(this, "Ошибка", "Не удалось найти клиента с указанным ИНН.");
         }
     }
 }
@@ -266,10 +266,10 @@ void MainWindow::onDeleteConsultationBySearch()
 
         if (DataManager::deleteConsultationByMatch(inn, fio, topic, date)) {
             updateConsultationsTable();
-            QMessageBox::information(this, u8"Успех", u8"Консультация успешно удалена.");
+            QMessageBox::information(this, "Успех", "Консультация успешно удалена.");
         }
         else {
-            QMessageBox::warning(this, u8"Ошибка", u8"Не удалось найти консультацию с указанными параметрами.");
+            QMessageBox::warning(this, "Ошибка", "Не удалось найти консультацию с указанными параметрами.");
         }
     }
 }
@@ -299,64 +299,61 @@ void MainWindow::onDeleteConsultationRecord()
 }
 
 void MainWindow::onLoadClients() {
-    QString fileName = QFileDialog::getOpenFileName(this, u8"Загрузить справочник клиентов", "", u8"Текстовые файлы (*.txt);;Все файлы (*.*)");
+    QString fileName = QFileDialog::getOpenFileName(this, "Загрузить справочник клиентов", "", "Текстовые файлы (*.txt);;Все файлы (*.*)");
 
     if (fileName.isEmpty()) return;
 
     if (DataManager::loadClientsFromFile(fileName)) {
         updateClientsTable();
-        QMessageBox::information(this, u8"Успех", u8"Данные клиентов успешно загружены.");
+        QMessageBox::information(this, "Успех", "Данные клиентов успешно загружены.");
     }
     else
     {
-        QMessageBox::warning(this, u8"Ошибка загрузки",
-            u8"Не удалось загрузить данные из файла.\n"
-            u8"Пожалуйста, проверьте, что файл существует и имеет корректный формат.");
+        QMessageBox::warning(this, "Ошибка загрузки",
+            "Не удалось загрузить данные из файла.\n"
+            "Пожалуйста, проверьте, что файл существует и имеет корректный формат.");
     }
 }
 
 void MainWindow::onLoadConsultations()
 {
-    QString fileName = QFileDialog::getOpenFileName(this, u8"Загрузить справочник консультаций", "", u8"Текстовые файлы (*.txt);;Все файлы (*.*)");
+    QString fileName = QFileDialog::getOpenFileName(this, "Загрузить справочник консультаций", "", "Текстовые файлы (*.txt);;Все файлы (*.*)");
 
     if (fileName.isEmpty()) return;
 
     if (DataManager::loadConsultationsFromFile(fileName)) {
         updateConsultationsTable();
-        QMessageBox::information(this, u8"Успех", u8"Данные консультаций успешно загружены.");
+        QMessageBox::information(this, "Успех", "Данные консультаций успешно загружены.");
     }
     else {
-        QMessageBox::warning(this, u8"Ошибка загрузки",
-            u8"Не удалось загрузить данные из файла.\n"
-            u8"Пожалуйста, проверьте, что файл существует и имеет корректный формат.");
+        QMessageBox::warning(this, "Ошибка загрузки",
+            "Не удалось загрузить данные из файла.\n"
+            "Пожалуйста, проверьте, что файл существует и имеет корректный формат.");
     }
 }
 
 void MainWindow::onSaveClients()
 {
     if (DataManager::getClients().isEmpty()) {
-        QMessageBox::information(this, u8"Сохранение", u8"Справочник клиентов пуст. Нечего сохранять.");
+        QMessageBox::information(this, "Сохранение", "Справочник клиентов пуст. Нечего сохранять.");
         return;
     }
 
-    QString fileName = QFileDialog::getSaveFileName(this,
-        u8"Сохранить справочник клиентов",
-        "clients.txt",
-        u8"Текстовые файлы (*.txt);;Все файлы (*.*)");
+    QString dirPath = QFileDialog::getExistingDirectory(this,
+        "Сохранить справочник клиентов",
+        "",
+        QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
 
-    if (fileName.isEmpty()) {
-        return;
-    }
+    if (dirPath.isEmpty()) return;
 
-    if (DataManager::saveClientsToFile(fileName))
+    if (DataManager::saveClientsToFile(dirPath + "/clients.txt"))
     {
-        QMessageBox::information(this, u8"Успех", u8"Справочник клиентов успешно сохранен.");
+        QMessageBox::information(this, "Успех", "Справочник клиентов успешно сохранен.");
     }
     else
     {
-        QMessageBox::critical(this, u8"Ошибка сохранения",
-            u8"Не удалось сохранить данные в файл.\n"
-            u8"Возможно, у вас нет прав на запись в эту директорию.");
+        QMessageBox::critical(this, "Ошибка сохранения",
+            "Не удалось сохранить данные в файл.\n");
     }
 }
 
@@ -366,10 +363,15 @@ void MainWindow::onSaveConsultations()
         QMessageBox::information(this, "Сохранение", "Справочник консультаций пуст. Нечего сохранять.");
         return;
     }
-    QString fileName = QFileDialog::getSaveFileName(this, "Сохранить справочник консультаций", "consultations.txt", "Текстовые файлы (*.txt);;Все файлы (*.*)");
-    if (fileName.isEmpty()) return;
 
-    if (DataManager::saveConsultationsToFile(fileName)) {
+    QString dirPath = QFileDialog::getExistingDirectory(this,
+        "Сохранить справочник консультаций", 
+        "", 
+        QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+    
+    if (dirPath.isEmpty()) return;
+
+    if (DataManager::saveConsultationsToFile(dirPath + "/consultations.txt")) {
         QMessageBox::information(this, "Успех", "Справочник консультаций успешно сохранен.");
     }
     else {
@@ -381,8 +383,8 @@ void MainWindow::onFindClient()
 {
     bool ok;
     QString innStr = QInputDialog::getText(this,
-        u8"Найти клиента",
-        u8"Введите ИНН клиента для поиска:",
+        "Найти клиента",
+        "Введите ИНН клиента для поиска:",
         QLineEdit::Normal,
         "",
         &ok);
@@ -392,7 +394,7 @@ void MainWindow::onFindClient()
     }
 
     if (!Validator::validateINN(innStr)) {
-        QMessageBox::warning(this, u8"Ошибка ввода", u8"ИНН должен состоять ровно из 12 цифр.");
+        QMessageBox::warning(this, "Ошибка ввода", "ИНН должен состоять ровно из 12 цифр.");
         return;
     }
 
@@ -402,15 +404,15 @@ void MainWindow::onFindClient()
     const Client* foundClient = DataManager::findClientByINN(innToFind, steps);
 
     if (foundClient != nullptr) {
-        QString message = QString(u8"Клиент найден за %1 шаг(ов):\n\n"
-            u8"ИНН: %2\n"
-            u8"ФИО: %3\n"
-            u8"Телефон: %4")
+        QString message = QString("Клиент найден за %1 шаг(ов):\n\n"
+            "ИНН: %2\n"
+            "ФИО: %3\n"
+            "Телефон: %4")
             .arg(steps)
             .arg(foundClient->inn)
             .arg(foundClient->fio.toString())
             .arg(foundClient->phone);
-        QMessageBox::information(this, u8"Результат поиска", message);
+        QMessageBox::information(this, "Результат поиска", message);
 
         ui->sellersTable->clearSelection();
         for (int i = 0; i < ui->sellersTable->rowCount(); ++i) {
@@ -423,7 +425,7 @@ void MainWindow::onFindClient()
 
     }
     else {
-        QMessageBox::information(this, u8"Результат поиска", u8"Клиент с таким ИНН не найден.");
+        QMessageBox::information(this, "Результат поиска", "Клиент с таким ИНН не найден.");
     }
 }
 
@@ -431,8 +433,8 @@ void MainWindow::onFindConsultations()
 {
     bool ok;
     QString innStr = QInputDialog::getText(this,
-        u8"Найти консультации клиента",
-        u8"Введите ИНН клиента для поиска его консультаций:",
+        "Найти консультации клиента",
+        "Введите ИНН клиента для поиска его консультаций:",
         QLineEdit::Normal,
         "",
         &ok);
@@ -442,7 +444,7 @@ void MainWindow::onFindConsultations()
     }
 
     if (!Validator::validateINN(innStr)) {
-        QMessageBox::warning(this, u8"Ошибка ввода", u8"ИНН должен состоять ровно из 12 цифр.");
+        QMessageBox::warning(this, "Ошибка ввода", "ИНН должен состоять ровно из 12 цифр.");
         return;
     }
 
@@ -454,7 +456,7 @@ void MainWindow::onFindConsultations()
     const auto& allConsultations = DataManager::getConsultations();
 
     if (!indices.isEmpty()) {
-        QString resultMessage = QString(u8"Найдено %1 консультаций за %2 шаг(ов):\n\n")
+        QString resultMessage = QString("Найдено %1 консультаций за %2 шаг(ов):\n\n")
             .arg(indices.size())
             .arg(steps);
 
@@ -463,7 +465,7 @@ void MainWindow::onFindConsultations()
         for (int index : indices) {
             if (index >= 0 && index < allConsultations.size()) {
                 const Consultation& cons = allConsultations.at(index);
-                resultMessage += QString(u8"Тема: %1\nЮрист: %2\nДата: %3\n\n")
+                resultMessage += QString("Тема: %1\nЮрист: %2\nДата: %3\n\n")
                     .arg(cons.topic)
                     .arg(cons.lawyer_fio.toString())
                     .arg(cons.date.toString());
@@ -481,15 +483,15 @@ void MainWindow::onFindConsultations()
             }
         }
 
-        QMessageBox::information(this, u8"Результат поиска", resultMessage.trimmed());
+        QMessageBox::information(this, "Результат поиска", resultMessage.trimmed());
         ui->mainTabWidget->setCurrentIndex(1); // Переключаемся на вкладку с консультациями
     }
     else {
         // Сообщение, если консультации не найдены (но поиск по дереву все равно был)
-        QString message = QString(u8"Консультации для клиента с ИНН %1 не найдены.\nПоиск выполнен за %2 шаг(ов).")
+        QString message = QString("Консультации для клиента с ИНН %1 не найдены.\nПоиск выполнен за %2 шаг(ов).")
             .arg(innStr)
             .arg(steps);
-        QMessageBox::information(this, u8"Результат поиска", message);
+        QMessageBox::information(this, "Результат поиска", message);
     }
 }
 
@@ -502,9 +504,9 @@ void MainWindow::onGenerateReport()
 void MainWindow::onAbout()
 {
     QMessageBox::about(this,
-        u8"О программе",
-        u8"Это приложение для курсовой работы, демонстрирующее\n"
-        u8"возможности компоновки виджетов в Qt.");
+        "О программе",
+        "Это приложение для курсовой работы, демонстрирующее\n"
+        "возможности компоновки виджетов в Qt.");
 }
 
 // ИЗМЕНЕНО: Старая функция onDebugButtonClicked переименована и полностью переписана
@@ -523,7 +525,7 @@ void MainWindow::onDebugActionTriggered()
 
     // 2. Создаем новое диалоговое окно программно
     QDialog* debugDialog = new QDialog(this); // Указываем родителя для корректного управления памятью
-    debugDialog->setWindowTitle(u8"Окно отладки");
+    debugDialog->setWindowTitle("Окно отладки");
     debugDialog->resize(800, 600); // Задаем удобный размер
 
     // 3. Создаем компоновщик для окна
