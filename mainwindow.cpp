@@ -1,9 +1,4 @@
 ﻿#include "mainwindow.h"
-#include "AddClientDialog.h"
-#include "AddConsultationDialog.h"
-#include "DeleteClientDialog.h"
-#include "ReportDialog.h"
-#include "DataManager.h"
 
 #include <QHeaderView>
 #include <QVBoxLayout>
@@ -63,8 +58,6 @@ MainWindow::~MainWindow()
 {
     delete ui; // Освобождаем память, выделенную для UI
 }
-
-// ... (весь ваш код до onAbout без изменений) ...
 
 void MainWindow::updateClientsTable()
 {

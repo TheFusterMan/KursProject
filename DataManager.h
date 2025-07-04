@@ -276,7 +276,6 @@ private:
             traverseForReport(node->right, criteria, reportData);
         }
     }
-
 public:
     static CustomVector<ReportEntry> generateReport(const FilterCriteria& criteria) {
         CustomVector<ReportEntry> reportData;
