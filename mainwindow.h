@@ -3,7 +3,12 @@
 
 #include <QMainWindow>
 
+#include "AddClientDialog.h"
+#include "AddConsultationDialog.h"
+#include "DeleteClientDialog.h"
 #include "DeleteConsultationDialog.h"
+#include "ReportDialog.h"
+#include "DataManager.h"
 
 #include "ui_KursProject.h"
 

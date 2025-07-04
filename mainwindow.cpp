@@ -1,9 +1,4 @@
 ﻿#include "mainwindow.h"
-#include "AddClientDialog.h"
-#include "AddConsultationDialog.h"
-#include "DeleteClientDialog.h"
-#include "ReportDialog.h"
-#include "DataManager.h"
 
 #include <QHeaderView>
 #include <QVBoxLayout>
