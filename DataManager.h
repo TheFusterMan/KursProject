@@ -162,7 +162,7 @@ static class DataManager {
 private:
     static Validator validator;
 
-    inline static HashTable clients_table{ 10 };
+    inline static HashTable clients_table{ 17 };
     inline static CustomVector<Client> clients_array;
 
     inline static AVLTree<quint64> consultations_tree;

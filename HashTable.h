@@ -33,11 +33,7 @@ public:
 
 	unsigned long long keyToNum(const unsigned long long& key) const {
 		unsigned long long num = 0;
-		int temp_key = key;
-
-		if (temp_key < 0) {
-			temp_key = -temp_key;
-		}
+		unsigned long long temp_key = key;
 
 		while (temp_key > 0) {
 			num += temp_key % 10;
