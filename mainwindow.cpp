@@ -269,7 +269,7 @@ void MainWindow::onDeleteConsultationBySearch()
             QMessageBox::information(this, "Успех", "Консультация успешно удалена.");
         }
         else {
-            QMessageBox::warning(this, "Ошибка", "Не удалось найти консультацию с указанными параметрами.");
+            QMessageBox::warning(this, "Ошибка", "Не удалось удалить консультацию с указанными параметрами.");
         }
     }
 }
