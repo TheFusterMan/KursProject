@@ -525,7 +525,7 @@ void MainWindow::onDebugActionTriggered()
 
     // 2. Создаем новое диалоговое окно программно
     QDialog* debugDialog = new QDialog(this); // Указываем родителя для корректного управления памятью
-    debugDialog->setWindowTitle("Окно отладки");
+    debugDialog->setWindowTitle("Отладка");
     debugDialog->resize(800, 600); // Задаем удобный размер
 
     // 3. Создаем компоновщик для окна
