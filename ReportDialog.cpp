@@ -1,5 +1,5 @@
-﻿#include "reportdialog.h" // Предполагается, что reportdialog.h существует
-#include "datamanager.h" // Используем DataManager
+﻿#include "reportdialog.h" 
+#include "datamanager.h" 
 #include "CustomVector.h"
 
 #include <QCheckBox>
@@ -20,7 +20,7 @@ ReportDialog::ReportDialog(QWidget* parent)
 {
     setupUi();
     setWindowTitle(u8"Формирование отчета");
-    setMinimumSize(800, 600); // Немного увеличим размер для удобства
+    setMinimumSize(800, 600);
 }
 
 void ReportDialog::setupUi()

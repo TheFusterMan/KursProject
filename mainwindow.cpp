@@ -14,7 +14,6 @@
 #include <QIcon>
 #include <QPoint>
 #include <QDebug>
-// ДОБАВЛЕНО: Эти заголовки нужны для создания диалога программно
 #include <QDialog>
 #include <QTextEdit>
 #include <QFontDatabase>
@@ -45,10 +44,6 @@ MainWindow::MainWindow(QWidget* parent)
     connect(ui->sellersTable, &QTableWidget::customContextMenuRequested, this, &MainWindow::showClientContextMenu);
     connect(ui->salesTable, &QTableWidget::customContextMenuRequested, this, &MainWindow::showConsultationContextMenu);
 
-    // ЭТА СТРОКА БЫЛА ИСТОЧНИКОМ ОШИБКИ, ТАК КАК ui->debugPushButton БОЛЬШЕ НЕ СУЩЕСТВУЕТ
-    // connect(ui->debugPushButton, &QPushButton::clicked, this, &MainWindow::onDebugActionTriggered); // <--- УДАЛИТЕ ИЛИ ЗАКОММЕНТИРУЙТЕ ЭТУ СТРОКУ
-
-    // Этот connect остается, так как action_2 все еще существует в UI файле (в меню "Правка")
     connect(ui->action_2, &QAction::triggered, this, &MainWindow::onDebugActionTriggered);
 
     ui->mainTabWidget->setCurrentIndex(0);
@@ -56,7 +51,7 @@ MainWindow::MainWindow(QWidget* parent)
 
 MainWindow::~MainWindow()
 {
-    delete ui; // Освобождаем память, выделенную для UI
+    delete ui;
 }
 
 void MainWindow::updateClientsTable()
@@ -116,21 +111,18 @@ void MainWindow::showClientContextMenu(const QPoint& pos)
             QMessageBox::Yes | QMessageBox::No);
 
         if (reply == QMessageBox::Yes) {
-            // ИЗМЕНЕНО: Получаем только ИНН, так как для удаления больше ничего не нужно.
             QString inn = ui->sellersTable->item(row, 0)->text();
 
-            // ИЗМЕНЕНО: Вызываем новую функцию deleteClientByINN, которая принимает только ИНН.
             if (DataManager::deleteClientByINN(inn)) {
                 updateClientsTable();
-                updateConsultationsTable(); // Консультации тоже обновляем, т.к. они удаляются вместе с клиентом
+                updateConsultationsTable();
                 QMessageBox::information(this, "Успех", "Клиент и его консультации успешно удалены.");
             }
             else {
-                // Сообщение об ошибке тоже можно сделать более точным
                 QMessageBox::warning(this, "Ошибка", "Не удалось удалить клиента. Возможно, он был изменен или удален ранее.");
             }
         }
-        });
+    });
 
     contextMenu.exec(ui->sellersTable->mapToGlobal(pos));
 }
@@ -160,7 +152,7 @@ void MainWindow::showConsultationContextMenu(const QPoint& pos)
                 QMessageBox::critical(this, "Ошибка", "Произошла ошибка при удалении записи.");
             }
         }
-        });
+    });
 
     contextMenu.exec(ui->salesTable->mapToGlobal(pos));
 }
@@ -230,7 +222,6 @@ void MainWindow::onDeleteClientRecord()
     {
         QString inn = dialog.getINN();
 
-        // Добавим подтверждение, т.к. операция стала более разрушительной
         QMessageBox::StandardButton reply;
         reply = QMessageBox::question(this, "Подтверждение удаления",
             "Вы уверены, что хотите удалить клиента с ИНН " + inn + "?\n"
@@ -244,7 +235,7 @@ void MainWindow::onDeleteClientRecord()
         if (DataManager::deleteClientByINN(inn))
         {
             updateClientsTable();
-            updateConsultationsTable(); // Нужно обновить обе таблицы
+            updateConsultationsTable();
             QMessageBox::information(this, "Успех", "Клиент и все его консультации успешно удалены.");
         }
         else
@@ -365,10 +356,10 @@ void MainWindow::onSaveConsultations()
     }
 
     QString dirPath = QFileDialog::getExistingDirectory(this,
-        "Сохранить справочник консультаций", 
-        "", 
+        "Сохранить справочник консультаций",
+        "",
         QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-    
+
     if (dirPath.isEmpty()) return;
 
     if (DataManager::saveConsultationsToFile(dirPath + "/consultations.txt")) {
@@ -448,10 +439,9 @@ void MainWindow::onFindConsultations()
         return;
     }
 
-    int steps = 0; // Переменная для подсчета шагов
+    int steps = 0;
     quint64 innToFind = innStr.toULongLong();
 
-    // ИЗМЕНЕНО: Вызываем функцию с передачей счетчика шагов
     CustomVector<int> indices = DataManager::findConsultationIndicesByINN(innToFind, steps);
     const auto& allConsultations = DataManager::getConsultations();
 
@@ -460,7 +450,7 @@ void MainWindow::onFindConsultations()
             .arg(indices.size())
             .arg(steps);
 
-        ui->salesTable->clearSelection(); // Очищаем предыдущее выделение
+        ui->salesTable->clearSelection();
 
         for (int index : indices) {
             if (index >= 0 && index < allConsultations.size()) {
@@ -470,8 +460,6 @@ void MainWindow::onFindConsultations()
                     .arg(cons.lawyer_fio.toString())
                     .arg(cons.date.toString());
 
-                // Подсветка найденных строк в таблице
-                // Этот цикл предполагает, что строки в таблице соответствуют индексам в массиве
                 for (int i = 0; i < ui->salesTable->rowCount(); ++i) {
                     if (ui->salesTable->item(i, 0)->text() == innStr &&
                         ui->salesTable->item(i, 1)->text() == cons.topic &&
@@ -484,10 +472,9 @@ void MainWindow::onFindConsultations()
         }
 
         QMessageBox::information(this, "Результат поиска", resultMessage.trimmed());
-        ui->mainTabWidget->setCurrentIndex(1); // Переключаемся на вкладку с консультациями
+        ui->mainTabWidget->setCurrentIndex(1);
     }
     else {
-        // Сообщение, если консультации не найдены (но поиск по дереву все равно был)
         QString message = QString("Консультации для клиента с ИНН %1 не найдены.\nПоиск выполнен за %2 шаг(ов).")
             .arg(innStr)
             .arg(steps);
@@ -509,10 +496,8 @@ void MainWindow::onAbout()
         "возможности компоновки виджетов в Qt.");
 }
 
-// ИЗМЕНЕНО: Старая функция onDebugButtonClicked переименована и полностью переписана
 void MainWindow::onDebugActionTriggered()
 {
-    // 1. Собираем отладочную информацию, как и раньше
     QString debugOutput;
     debugOutput += "========== ХЕШ-ТАБЛИЦА КЛИЕНТОВ (по ИНН) ==========\n";
     debugOutput += DataManager::getClientsTableState();
@@ -523,28 +508,21 @@ void MainWindow::onDebugActionTriggered()
     debugOutput += "========== ДЕРЕВО ФИЛЬТРАЦИИ (по дате) ==========\n";
     debugOutput += DataManager::getFilterTreeByDateState();
 
-    // 2. Создаем новое диалоговое окно программно
-    QDialog* debugDialog = new QDialog(this); // Указываем родителя для корректного управления памятью
+    QDialog* debugDialog = new QDialog(this);
     debugDialog->setWindowTitle("Отладка");
-    debugDialog->resize(800, 600); // Задаем удобный размер
+    debugDialog->resize(800, 600);
 
-    // 3. Создаем компоновщик для окна
     QVBoxLayout* layout = new QVBoxLayout(debugDialog);
 
-    // 4. Создаем текстовое поле для вывода информации
     QTextEdit* textEdit = new QTextEdit();
-    textEdit->setReadOnly(true); // Только для чтения
-    textEdit->setPlainText(debugOutput); // Помещаем в него собранный текст
+    textEdit->setReadOnly(true);
+    textEdit->setPlainText(debugOutput);
 
-    // Для лучшей читаемости используем моноширинный шрифт
     textEdit->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
 
-    // 5. Добавляем текстовое поле в компоновщик
     layout->addWidget(textEdit);
 
-    // 6. Показываем окно в модальном режиме
     debugDialog->exec();
 
-    // 7. После закрытия окна, удаляем его, чтобы избежать утечек памяти
     delete debugDialog;
 }
