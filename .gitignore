@@ -66,9 +66,6 @@ qrc_*.cpp
 *.jscache
 *.qmake.stash
 
-# Скомпилированные файлы переводов (исходные .ts файлы должны быть в репозитории)
-*.qm
-
 # Сгенерированные Makefile (если используется qmake)
 Makefile*
 object_script.*.Release

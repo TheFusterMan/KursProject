@@ -83,6 +83,13 @@ struct Client {
     quint64 inn;
     FIO fio;
     quint64 phone;
+
+    QString toFileLine() const {
+        return QString("%1;%2;%3")
+            .arg(inn)
+            .arg(fio.toString())
+            .arg(QString::number(phone));
+    }
 };
 
 struct Consultation {
@@ -169,8 +176,7 @@ private:
     inline static CustomVector<Consultation> consultations_array;
 
     inline static AVLTree<Date> filter_tree_by_date;
-    //inline static AVLTree<FIO> filter_tree_by_client_fio;
-    //inline static AVLTree<FIO> filter_tree_by_lawyer_fio;
+
 
     static void buildFilterTreeByDate(AVLTree<Date>& filter_tree) {
         filter_tree.freeTree(filter_tree.root);
@@ -181,24 +187,7 @@ private:
             filter_tree.add(consultation.date, i);
         }
     }
-    //static void buildFilterTreeByClientFIO(AVLTree<FIO>& filter_tree) {
-    //    filter_tree.freeTree(filter_tree.root);
-    //    filter_tree.root = nullptr;
 
-    //    for (int i = 0; i < clients_array.size(); ++i) {
-    //        const auto& consultation = clients_array.at(i);
-    //        filter_tree.add(consultation.fio, i);
-    //    }
-    //}
-    //static void buildFilterTreeByLawyerFIO(AVLTree<FIO>& filter_tree) {
-    //    filter_tree.freeTree(filter_tree.root);
-    //    filter_tree.root = nullptr;
-
-    //    for (int i = 0; i < consultations_array.size(); ++i) {
-    //        const auto& consultation = consultations_array.at(i);
-    //        filter_tree.add(consultation.lawyer_fio, i);
-    //    }
-    //}
 
     static void traverseForReport(TreeNode<Date>* node, const FilterCriteria& criteria, CustomVector<ReportEntry>& reportData) {
         if (!node) {
@@ -358,8 +347,6 @@ public:
         qInfo() << "Загружено" << consultations_array.size() << "консультаций.";
 
         buildFilterTreeByDate(filter_tree_by_date);
-        //buildFilterTree(filter_tree_by_client_fio);
-        //buildFilterTree(filter_tree_by_lawyer_fio);
         return true;
     }
 
@@ -372,11 +359,7 @@ public:
         }
         QTextStream out(&file);
         for (const Client& client : clients_array) {
-            QString line = QString("%1;%2;%3")
-                .arg(client.inn)
-                .arg(client.fio.toString())
-                .arg(QString::number(client.phone));
-            out << line << "\n";
+            out << client.toFileLine() << "\n";
         }
         file.close();
         return true;
@@ -423,7 +406,7 @@ public:
             int newIndex = consultations_array.size();
             consultations_array.append({ validINN, theme, FIO(fio), Date(date) });
 
-            // Добавляем в деревья фильтрации
+            //
             const auto& newConsultation = consultations_array.last();
             filter_tree_by_date.add(newConsultation.date, newIndex);
 
@@ -445,15 +428,12 @@ public:
             return false;
         }
 
-        // Сначала удаляем все связанные консультации
         CustomVector<int> indicesToDelete = findConsultationIndicesByINN(innToDelete_q64);
-        // Важно: сортируем индексы в обратном порядке, чтобы не сдвигать оставшиеся
         std::sort(indicesToDelete.rbegin(), indicesToDelete.rend());
         for (int index : indicesToDelete) {
             deleteConsultation(index);
         }
 
-        // Теперь удаляем самого клиента
         int indexToDeleteInClients = clientToDelete - &clients_array[0];
         int lastClientIndex = clients_array.size() - 1;
         if (indexToDeleteInClients < lastClientIndex) {
@@ -496,7 +476,7 @@ public:
 
         return true;
     }
-    
+
     static bool deleteConsultationByMatch(const QString& clientInn, const QString& lawyerFio, const QString& topic, const QString& date)
     {
         if (!validator.validateINN(clientInn) || !validator.validateFIO(lawyerFio) || !validator.validateDate(date)) {
@@ -513,12 +493,10 @@ public:
                 consultation.topic == topic &&
                 consultation.date == d)
             {
-                // Нашли совпадение, вызываем существующую функцию удаления по индексу
                 return deleteConsultation(i);
             }
         }
 
-        // Если прошли весь цикл и не нашли совпадения
         qWarning() << "Консультация с указанными параметрами не найдена.";
         return false;
     }
@@ -560,7 +538,6 @@ public:
         return findConsultationIndicesByINN(inn, dummy_steps);
     }
 
-    // ОТЛАДКА
     static QString getClientsTableState() { return QString::fromStdString(clients_table.toString()); }
     static QString getConsultationsTreeState() { return QString::fromStdString(consultations_tree.toString(consultations_tree.root)); }
     static QString getFilterTreeByDateState() { return  QString::fromStdString(filter_tree_by_date.toString(filter_tree_by_date.root)); }

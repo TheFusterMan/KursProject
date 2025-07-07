@@ -146,14 +146,6 @@ void ReportDialog::onSaveReport()
 
     QTextStream out(&file);
 
-    // Если заголовки нужны в выходном файле
-    // 
-    //QStringList headers;
-    //for (int i = 0; i < reportTable->columnCount(); ++i) {
-    //    headers << reportTable->horizontalHeaderItem(i)->text();
-    //}
-    //out << headers.join(";") << "\n";
-
     for (int row = 0; row < reportTable->rowCount(); ++row) {
         QStringList rowData;
         for (int col = 0; col < reportTable->columnCount(); ++col) {
