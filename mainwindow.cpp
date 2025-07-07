@@ -65,8 +65,7 @@ void MainWindow::updateClientsTable()
         int newRowIndex = ui->sellersTable->rowCount();
         ui->sellersTable->insertRow(newRowIndex);
 
-        ui->sellersTable->setItem(newRowIndex, 0, new QTableWidgetItem(QString::number(client.inn)));
-        ui->sellersTable->setItem(newRowIndex, 1, new QTableWidgetItem(client.fio.toString()));
+        ui->sellersTable->setItem(newRowIndex, 0, new QTableWidgetItem(QString("%1").arg(client.inn, 12, 10, QChar('0'))));        ui->sellersTable->setItem(newRowIndex, 1, new QTableWidgetItem(client.fio.toString()));
         ui->sellersTable->setItem(newRowIndex, 2, new QTableWidgetItem(QString::number(client.phone)));
     }
 
@@ -84,7 +83,7 @@ void MainWindow::updateConsultationsTable()
         int newRow = ui->salesTable->rowCount();
         ui->salesTable->insertRow(newRow);
 
-        ui->salesTable->setItem(newRow, 0, new QTableWidgetItem(QString::number(cons.client_inn)));
+        ui->salesTable->setItem(newRow, 0, new QTableWidgetItem(QString("%1").arg(cons.client_inn, 12, 10, QChar('0'))));
         ui->salesTable->setItem(newRow, 1, new QTableWidgetItem(cons.topic));
         ui->salesTable->setItem(newRow, 2, new QTableWidgetItem(cons.lawyer_fio.toString()));
         ui->salesTable->setItem(newRow, 3, new QTableWidgetItem(cons.date.toString()));
@@ -222,6 +221,14 @@ void MainWindow::onDeleteClientRecord()
     {
         QString inn = dialog.getINN();
 
+        int steps = 0;
+        const Client* clientExists = DataManager::findClientByINN(inn.toULongLong(), steps);
+
+        if (!clientExists) {
+            QMessageBox::warning(this, "Ошибка", "Не удалось найти клиента с указанным ИНН.");
+            return;
+        }
+
         QMessageBox::StandardButton reply;
         reply = QMessageBox::question(this, "Подтверждение удаления",
             "Вы уверены, что хотите удалить клиента с ИНН " + inn + "?\n"
@@ -240,7 +247,7 @@ void MainWindow::onDeleteClientRecord()
         }
         else
         {
-            QMessageBox::warning(this, "Ошибка", "Не удалось найти клиента с указанным ИНН.");
+            QMessageBox::warning(this, "Ошибка", "Не удалось удалить клиента. Возможно, он был изменен или удален ранее.");
         }
     }
 }
@@ -395,12 +402,13 @@ void MainWindow::onFindClient()
     const Client* foundClient = DataManager::findClientByINN(innToFind, steps);
 
     if (foundClient != nullptr) {
+        QString formattedInn = QString("%1").arg(foundClient->inn, 12, 10, QChar('0'));
         QString message = QString("Клиент найден за %1 шаг(ов):\n\n"
             "ИНН: %2\n"
             "ФИО: %3\n"
             "Телефон: %4")
             .arg(steps)
-            .arg(foundClient->inn)
+            .arg(formattedInn) 
             .arg(foundClient->fio.toString())
             .arg(foundClient->phone);
         QMessageBox::information(this, "Результат поиска", message);

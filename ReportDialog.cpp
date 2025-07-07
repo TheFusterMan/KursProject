@@ -123,7 +123,7 @@ void ReportDialog::onGenerateReport()
         reportTable->setItem(newRow, 0, new QTableWidgetItem(entry.date.toString()));
         reportTable->setItem(newRow, 1, new QTableWidgetItem(entry.topic));
         reportTable->setItem(newRow, 2, new QTableWidgetItem(entry.lawyer_fio.toString()));
-        reportTable->setItem(newRow, 3, new QTableWidgetItem(QString::number(entry.client_inn)));
+        reportTable->setItem(newRow, 3, new QTableWidgetItem(QString("%1").arg(entry.client_inn, 12, 10, QChar('0'))));
         reportTable->setItem(newRow, 4, new QTableWidgetItem(entry.client_fio.toString()));
         reportTable->setItem(newRow, 5, new QTableWidgetItem(QString::number(entry.phone)));
     }
