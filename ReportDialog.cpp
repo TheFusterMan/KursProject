@@ -1,6 +1,5 @@
-﻿#include "reportdialog.h" 
-#include "datamanager.h" 
-#include "CustomVector.h"
+﻿#include "reportdialog.h"
+#include "datamanager.h"
 
 #include <QCheckBox>
 #include <QDateEdit>
@@ -29,7 +28,7 @@ void ReportDialog::setupUi()
     dateEdit->setPlaceholderText(u8"Введите дату в формате ДД.ММ.ГГГГ");
 
     clientFioEdit = new QLineEdit(this);
-    clientFioEdit->setPlaceholderText(u8"Полное ФИО клиента (например, Иванов Иван Иванович)"); 
+    clientFioEdit->setPlaceholderText(u8"Полное ФИО клиента (например, Иванов Иван Иванович)");
 
     lawyerFioEdit = new QLineEdit(this);
     lawyerFioEdit->setPlaceholderText(u8"Полное ФИО юриста (например, Петров Петр Петрович)");
@@ -56,7 +55,7 @@ void ReportDialog::setupUi()
     reportTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     reportTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     reportTable->verticalHeader()->setVisible(false);
-    reportTable->setSortingEnabled(true); // Включим сортировку по колонкам
+    reportTable->setSortingEnabled(true);
 
     generateButton = new QPushButton(u8"Сформировать отчет", this);
     saveButton = new QPushButton(u8"Сохранить в файл", this);
@@ -70,7 +69,7 @@ void ReportDialog::setupUi()
 
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     mainLayout->addWidget(filterGroup);
-    mainLayout->addWidget(reportTable, 1); // Даем таблице возможность растягиваться
+    mainLayout->addWidget(reportTable, 1);
     mainLayout->addLayout(buttonLayout);
     setLayout(mainLayout);
 
@@ -105,7 +104,8 @@ void ReportDialog::onGenerateReport()
         criteria.date.year = 0;
     }
 
-    CustomVector<ReportEntry> reportData = DataManager::generateReport(criteria);
+    // ИЗМЕНЕНО: CustomVector заменен на QVector, так как DataManager теперь возвращает его
+    QVector<ReportEntry> reportData = DataManager::generateReport(criteria);
 
     reportTable->setRowCount(0);
 

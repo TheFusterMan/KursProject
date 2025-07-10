@@ -111,7 +111,6 @@
     <QtMoc Include="ReportDialog.h" />
     <QtMoc Include="AddConsultationDialog.h" />
     <ClInclude Include="AVLTree.h" />
-    <ClInclude Include="CustomVector.h" />
     <ClInclude Include="DataManager.h" />
     <QtMoc Include="AddClientDialog.h" />
     <QtMoc Include="DeleteClientDialog.h" />

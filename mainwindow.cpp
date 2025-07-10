@@ -1,4 +1,11 @@
 ﻿#include "mainwindow.h"
+#include "ui_KursProject.h" // Убедитесь, что имя файла верное
+#include "datamanager.h"
+#include "addclientdialog.h"
+#include "addconsultationdialog.h"
+#include "deleteclientdialog.h"
+#include "deleteconsultationdialog.h"
+#include "reportdialog.h"
 
 #include <QHeaderView>
 #include <QVBoxLayout>
@@ -16,8 +23,6 @@
 #include <QDebug>
 #include <QDialog>
 #include <QTextEdit>
-#include <QFontDatabase>
-
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent), ui(new Ui::KursProjectClass)
@@ -65,7 +70,8 @@ void MainWindow::updateClientsTable()
         int newRowIndex = ui->sellersTable->rowCount();
         ui->sellersTable->insertRow(newRowIndex);
 
-        ui->sellersTable->setItem(newRowIndex, 0, new QTableWidgetItem(QString("%1").arg(client.inn, 12, 10, QChar('0'))));        ui->sellersTable->setItem(newRowIndex, 1, new QTableWidgetItem(client.fio.toString()));
+        ui->sellersTable->setItem(newRowIndex, 0, new QTableWidgetItem(QString("%1").arg(client.inn, 12, 10, QChar('0'))));
+        ui->sellersTable->setItem(newRowIndex, 1, new QTableWidgetItem(client.fio.toString()));
         ui->sellersTable->setItem(newRowIndex, 2, new QTableWidgetItem(QString::number(client.phone)));
     }
 
@@ -143,12 +149,19 @@ void MainWindow::showConsultationContextMenu(const QPoint& pos)
             QMessageBox::Yes | QMessageBox::No);
 
         if (reply == QMessageBox::Yes) {
-            if (DataManager::deleteConsultation(row)) {
+            // ИСПРАВЛЕНО: Удаление по индексу строки (row) небезопасно при сортировке.
+            // Вместо этого получаем данные из строки и используем более надежный метод удаления.
+            QString inn = ui->salesTable->item(row, 0)->text();
+            QString topic = ui->salesTable->item(row, 1)->text();
+            QString lawyerFio = ui->salesTable->item(row, 2)->text();
+            QString date = ui->salesTable->item(row, 3)->text();
+
+            if (DataManager::deleteConsultationByMatch(inn, lawyerFio, topic, date)) {
                 updateConsultationsTable();
                 QMessageBox::information(this, "Успех", "Запись успешно удалена.");
             }
             else {
-                QMessageBox::critical(this, "Ошибка", "Произошла ошибка при удалении записи.");
+                QMessageBox::critical(this, "Ошибка", "Произошла ошибка при удалении записи. Возможно, она была изменена.");
             }
         }
     });
@@ -168,13 +181,7 @@ void MainWindow::onAddClientRecord()
 
         if (DataManager::addClient(INN, FIO, Phone))
         {
-            int newRowIndex = ui->sellersTable->rowCount();
-            ui->sellersTable->insertRow(newRowIndex);
-
-            ui->sellersTable->setItem(newRowIndex, 0, new QTableWidgetItem(INN));
-            ui->sellersTable->setItem(newRowIndex, 1, new QTableWidgetItem(FIO));
-            ui->sellersTable->setItem(newRowIndex, 2, new QTableWidgetItem(Phone));
-
+            updateClientsTable(); // Обновляем всю таблицу для корректного отображения
             QMessageBox::information(this, "Успех", "Запись успешно добавлена!");
         }
         else
@@ -197,14 +204,7 @@ void MainWindow::onAddConsultationRecord()
 
         if (DataManager::addConsultation(INN, FIO, Theame, Date))
         {
-            int newRowIndex = ui->salesTable->rowCount();
-            ui->salesTable->insertRow(newRowIndex);
-
-            ui->salesTable->setItem(newRowIndex, 0, new QTableWidgetItem(INN));
-            ui->salesTable->setItem(newRowIndex, 1, new QTableWidgetItem(Theame));
-            ui->salesTable->setItem(newRowIndex, 2, new QTableWidgetItem(FIO));
-            ui->salesTable->setItem(newRowIndex, 3, new QTableWidgetItem(Date));
-
+            updateConsultationsTable(); // Обновляем всю таблицу
             QMessageBox::information(this, "Успех", "Запись успешно добавлена!");
         }
         else
@@ -286,7 +286,13 @@ void MainWindow::onDeleteConsultationRecord()
     reply = QMessageBox::question(this, "Подтверждение", "Вы уверены, что хотите удалить эту консультацию?",
         QMessageBox::Yes | QMessageBox::No);
     if (reply == QMessageBox::Yes) {
-        if (DataManager::deleteConsultation(row)) {
+        // ИСПРАВЛЕНО: та же проблема, что и в контекстном меню. Используем надежный метод.
+        QString inn = ui->salesTable->item(row, 0)->text();
+        QString topic = ui->salesTable->item(row, 1)->text();
+        QString lawyerFio = ui->salesTable->item(row, 2)->text();
+        QString date = ui->salesTable->item(row, 3)->text();
+
+        if (DataManager::deleteConsultationByMatch(inn, lawyerFio, topic, date)) {
             updateConsultationsTable();
             QMessageBox::information(this, "Успех", "Запись успешно удалена.");
         }
@@ -408,7 +414,7 @@ void MainWindow::onFindClient()
             "ФИО: %3\n"
             "Телефон: %4")
             .arg(steps)
-            .arg(formattedInn) 
+            .arg(formattedInn)
             .arg(foundClient->fio.toString())
             .arg(foundClient->phone);
         QMessageBox::information(this, "Результат поиска", message);
@@ -450,7 +456,8 @@ void MainWindow::onFindConsultations()
     int steps = 0;
     quint64 innToFind = innStr.toULongLong();
 
-    CustomVector<int> indices = DataManager::findConsultationIndicesByINN(innToFind, steps);
+    // ИЗМЕНЕНО: CustomVector заменен на QVector
+    QVector<int> indices = DataManager::findConsultationIndicesByINN(innToFind, steps);
     const auto& allConsultations = DataManager::getConsultations();
 
     if (!indices.isEmpty()) {
@@ -524,8 +531,6 @@ void MainWindow::onDebugActionTriggered()
     QTextEdit* textEdit = new QTextEdit();
     textEdit->setReadOnly(true);
     textEdit->setPlainText(debugOutput);
-
-    textEdit->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
 
     layout->addWidget(textEdit);
 

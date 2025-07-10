@@ -1,14 +1,16 @@
 ﻿#pragma once
 #include <HashTable.h>
 #include <AVLTree.h>
-#include <CustomVector.h>
+// #include <CustomVector.h> // Удалено
 
 #include <QString>
+#include <QVector> // Добавлено
 #include <stdexcept>
 #include <QRegularExpression>
 #include <QFile>
 #include <QTextStream>
 #include <QDebug>
+#include <algorithm> // Добавлено для std::sort
 
 struct Date {
     Date() : day(0), month(0), year(0) {}
@@ -169,11 +171,13 @@ static class DataManager {
 private:
     static Validator validator;
 
+    inline static Client clients_array[1000];
+    inline static int clients_array_size = 0;
     inline static HashTable clients_table{ 17 };
-    inline static CustomVector<Client> clients_array;
 
+    inline static Consultation consultations_array[1000];
+    inline static int consultations_array_size = 0;
     inline static AVLTree<quint64> consultations_tree;
-    inline static CustomVector<Consultation> consultations_array;
 
     inline static AVLTree<Date> filter_tree_by_date;
 
@@ -182,14 +186,14 @@ private:
         filter_tree.freeTree(filter_tree.root);
         filter_tree.root = nullptr;
 
-        for (int i = 0; i < consultations_array.size(); ++i) {
-            const auto& consultation = consultations_array.at(i);
+        for (int i = 0; i < consultations_array_size; ++i) {
+            const auto& consultation = consultations_array[i];
             filter_tree.add(consultation.date, i);
         }
     }
 
 
-    static void traverseForReport(TreeNode<Date>* node, const FilterCriteria& criteria, CustomVector<ReportEntry>& reportData) {
+    static void traverseForReport(TreeNode<Date>* node, const FilterCriteria& criteria, ReportEntry* reportData, int& reportDataSize) {
         if (!node) {
             return;
         }
@@ -198,20 +202,20 @@ private:
 
         if (dateFilterActive) {
             if (criteria.date < node->key) {
-                traverseForReport(node->left, criteria, reportData);
+                traverseForReport(node->left, criteria, reportData, reportDataSize);
             }
             else if (criteria.date > node->key) {
-                traverseForReport(node->right, criteria, reportData);
+                traverseForReport(node->right, criteria, reportData, reportDataSize);
             }
             else {
                 ListNode* currentIndexNode = node->head;
                 while (currentIndexNode) {
                     int consultationIndex = currentIndexNode->data;
-                    if (consultationIndex < 0 || consultationIndex >= consultations_array.size()) {
+                    if (consultationIndex < 0 || consultationIndex >= consultations_array_size) {
                         currentIndexNode = currentIndexNode->next;
                         continue;
                     }
-                    const Consultation& consultation = consultations_array.at(consultationIndex);
+                    const Consultation& consultation = consultations_array[consultationIndex];
                     const Client* client = findClientByINN(consultation.client_inn);
 
                     if (client) {
@@ -222,10 +226,15 @@ private:
                             (QString::compare(consultation.lawyer_fio.toString(), criteria.lawyer_fio, Qt::CaseInsensitive) == 0);
 
                         if (clientFioMatch && lawyerFioMatch) {
-                            reportData.append({
-                                client->inn, client->fio, client->phone,
-                                consultation.topic, consultation.lawyer_fio, consultation.date
-                                });
+                            if (reportDataSize < 1000) {
+                                reportData[reportDataSize++] = {
+                                    client->inn, client->fio, client->phone,
+                                    consultation.topic, consultation.lawyer_fio, consultation.date
+                                };
+                            }
+                            else {
+                                qWarning() << "Report data array overflow!";
+                            }
                         }
                     }
                     currentIndexNode = currentIndexNode->next;
@@ -233,16 +242,16 @@ private:
             }
         }
         else {
-            traverseForReport(node->left, criteria, reportData);
+            traverseForReport(node->left, criteria, reportData, reportDataSize);
 
             ListNode* currentIndexNode = node->head;
             while (currentIndexNode) {
                 int consultationIndex = currentIndexNode->data;
-                if (consultationIndex < 0 || consultationIndex >= consultations_array.size()) {
+                if (consultationIndex < 0 || consultationIndex >= consultations_array_size) {
                     currentIndexNode = currentIndexNode->next;
                     continue;
                 }
-                const Consultation& consultation = consultations_array.at(consultationIndex);
+                const Consultation& consultation = consultations_array[consultationIndex];
                 const Client* client = findClientByINN(consultation.client_inn);
 
                 if (client) {
@@ -253,23 +262,35 @@ private:
                         (QString::compare(consultation.lawyer_fio.toString(), criteria.lawyer_fio, Qt::CaseInsensitive) == 0);
 
                     if (clientFioMatch && lawyerFioMatch) {
-                        reportData.append({
-                            client->inn, client->fio, client->phone,
-                            consultation.topic, consultation.lawyer_fio, consultation.date
-                            });
+                        if (reportDataSize < 1000) {
+                            reportData[reportDataSize++] = {
+                                client->inn, client->fio, client->phone,
+                                consultation.topic, consultation.lawyer_fio, consultation.date
+                            };
+                        }
+                        else {
+                            qWarning() << "Report data array overflow!";
+                        }
                     }
                 }
                 currentIndexNode = currentIndexNode->next;
             }
 
-            traverseForReport(node->right, criteria, reportData);
+            traverseForReport(node->right, criteria, reportData, reportDataSize);
         }
     }
 public:
-    static CustomVector<ReportEntry> generateReport(const FilterCriteria& criteria) {
-        CustomVector<ReportEntry> reportData;
-        traverseForReport(filter_tree_by_date.root, criteria, reportData);
-        return reportData;
+    static QVector<ReportEntry> generateReport(const FilterCriteria& criteria) {
+        ReportEntry reportDataArray[1000];
+        int reportDataSize = 0;
+        traverseForReport(filter_tree_by_date.root, criteria, reportDataArray, reportDataSize);
+
+        QVector<ReportEntry> result;
+        result.reserve(reportDataSize);
+        for (int i = 0; i < reportDataSize; ++i) {
+            result.append(reportDataArray[i]);
+        }
+        return result;
     }
 
     static bool loadClientsFromFile(const QString& filename)
@@ -280,10 +301,9 @@ public:
             return false;
         }
 
-        clients_array.clear();
+        clients_array_size = 0;
 
         QTextStream in(&file);
-        int index = 0;
         while (!in.atEnd()) {
             QString line = in.readLine();
             QStringList parts = line.split(';');
@@ -293,16 +313,23 @@ public:
                 client.inn = parts[0].trimmed().toULongLong();
                 client.phone = parts[2].trimmed().toULongLong();
                 client.fio = FIO(parts[1].trimmed());
-                clients_array.append(client);
-                clients_table.add(client.inn, index);
-                index++;
+
+                if (clients_array_size < 1000) {
+                    clients_array[clients_array_size] = client;
+                    clients_table.add(client.inn, clients_array_size);
+                    clients_array_size++;
+                }
+                else {
+                    qWarning() << "Превышен лимит клиентов (1000). Дальнейшая загрузка невозможна.";
+                    break;
+                }
             }
             else {
                 qWarning() << "Incorrect line format in clients file:" << line;
             }
         }
         file.close();
-        qInfo() << "Загружено" << clients_array.size() << "клиентов.";
+        qInfo() << "Загружено" << clients_array_size << "клиентов.";
         return true;
     }
 
@@ -313,12 +340,11 @@ public:
             return false;
         }
 
-        consultations_array.clear();
+        consultations_array_size = 0;
         consultations_tree.freeTree(consultations_tree.root);
         consultations_tree.root = nullptr;
 
         QTextStream in(&file);
-        int index = 0;
         while (!in.atEnd()) {
             QString line = in.readLine();
             QStringList parts = line.split(';');
@@ -331,9 +357,15 @@ public:
                 consultation.date = Date(parts[3].trimmed());
 
                 if (findClientByINN(consultation.client_inn) != nullptr) {
-                    consultations_array.append(consultation);
-                    consultations_tree.add(consultation.client_inn, index);
-                    index++;
+                    if (consultations_array_size < 1000) {
+                        consultations_array[consultations_array_size] = consultation;
+                        consultations_tree.add(consultation.client_inn, consultations_array_size);
+                        consultations_array_size++;
+                    }
+                    else {
+                        qWarning() << "Превышен лимит консультаций (1000). Дальнейшая загрузка невозможна.";
+                        break;
+                    }
                 }
                 else {
                     qWarning() << "Не существует клиента с таким ИНН:" << line;
@@ -344,7 +376,7 @@ public:
             }
         }
         file.close();
-        qInfo() << "Загружено" << consultations_array.size() << "консультаций.";
+        qInfo() << "Загружено" << consultations_array_size << "консультаций.";
 
         buildFilterTreeByDate(filter_tree_by_date);
         return true;
@@ -358,8 +390,8 @@ public:
             return false;
         }
         QTextStream out(&file);
-        for (const Client& client : clients_array) {
-            out << client.toFileLine() << "\n";
+        for (int i = 0; i < clients_array_size; ++i) {
+            out << clients_array[i].toFileLine() << "\n";
         }
         file.close();
         return true;
@@ -373,8 +405,8 @@ public:
             return false;
         }
         QTextStream out(&file);
-        for (const Consultation& consultation : consultations_array) {
-            out << consultation.toFileLine() << "\n";
+        for (int i = 0; i < consultations_array_size; ++i) {
+            out << consultations_array[i].toFileLine() << "\n";
         }
         file.close();
         return true;
@@ -387,8 +419,13 @@ public:
                 qWarning() << "Клиент с ИНН" << inn << "уже существует.";
                 return false;
             }
-            clients_array.append({ validINN, FIO(fio), phone.toULongLong() });
-            clients_table.add(validINN, clients_array.size() - 1);
+            if (clients_array_size >= 1000) {
+                qWarning() << "Невозможно добавить клиента, массив полон.";
+                return false;
+            }
+            clients_array[clients_array_size] = { validINN, FIO(fio), phone.toULongLong() };
+            clients_table.add(validINN, clients_array_size);
+            clients_array_size++;
             return true;
         }
         return false;
@@ -402,15 +439,19 @@ public:
                 qWarning() << "Попытка добавить консультацию для несуществующего клиента с ИНН:" << validINN;
                 return false;
             }
+            if (consultations_array_size >= 1000) {
+                qWarning() << "Невозможно добавить консультацию, массив полон.";
+                return false;
+            }
 
-            int newIndex = consultations_array.size();
-            consultations_array.append({ validINN, theme, FIO(fio), Date(date) });
+            int newIndex = consultations_array_size;
+            consultations_array[newIndex] = { validINN, theme, FIO(fio), Date(date) };
 
-            //
-            const auto& newConsultation = consultations_array.last();
+            const auto& newConsultation = consultations_array[newIndex];
             filter_tree_by_date.add(newConsultation.date, newIndex);
-
             consultations_tree.add(validINN, newIndex);
+
+            consultations_array_size++;
             return true;
         }
         return false;
@@ -428,21 +469,23 @@ public:
             return false;
         }
 
-        CustomVector<int> indicesToDelete = findConsultationIndicesByINN(innToDelete_q64);
+        QVector<int> indicesToDelete = findConsultationIndicesByINN(innToDelete_q64);
         std::sort(indicesToDelete.rbegin(), indicesToDelete.rend());
         for (int index : indicesToDelete) {
             deleteConsultation(index);
         }
 
         int indexToDeleteInClients = clientToDelete - &clients_array[0];
-        int lastClientIndex = clients_array.size() - 1;
+        int lastClientIndex = clients_array_size - 1;
         if (indexToDeleteInClients < lastClientIndex) {
-            const Client& lastClient = clients_array.last();
+            const Client& lastClient = clients_array[lastClientIndex];
             clients_array[indexToDeleteInClients] = lastClient;
             clients_table.updateIndex(lastClient.inn, indexToDeleteInClients);
         }
         clients_table.remove(innToDelete_q64);
-        clients_array.removeLast();
+        if (clients_array_size > 0) {
+            clients_array_size--;
+        }
 
         qInfo() << "Клиент с ИНН" << inn << "и все его консультации успешно удалены.";
         return true;
@@ -450,16 +493,16 @@ public:
 
     static bool deleteConsultation(int indexInArray)
     {
-        if (indexInArray < 0 || indexInArray >= consultations_array.size()) return false;
+        if (indexInArray < 0 || indexInArray >= consultations_array_size) return false;
 
-        const Consultation& toDelete = consultations_array.at(indexInArray);
+        const Consultation& toDelete = consultations_array[indexInArray];
         quint64 innToDelete = toDelete.client_inn;
         Date dateKeyToDelete = toDelete.date;
 
-        int lastIndex = consultations_array.size() - 1;
+        int lastIndex = consultations_array_size - 1;
 
         if (indexInArray < lastIndex) {
-            const Consultation& lastElement = consultations_array.last();
+            const Consultation& lastElement = consultations_array[lastIndex];
             consultations_array[indexInArray] = lastElement;
 
             consultations_tree.remove(lastElement.client_inn, lastIndex);
@@ -469,7 +512,9 @@ public:
             filter_tree_by_date.add(lastElement.date, indexInArray);
         }
 
-        consultations_array.removeLast();
+        if (consultations_array_size > 0) {
+            consultations_array_size--;
+        }
 
         consultations_tree.remove(innToDelete, indexInArray);
         filter_tree_by_date.remove(dateKeyToDelete, indexInArray);
@@ -486,8 +531,8 @@ public:
         quint64 inn = clientInn.toULongLong();
         Date d(date);
 
-        for (int i = 0; i < consultations_array.size(); ++i) {
-            const auto& consultation = consultations_array.at(i);
+        for (int i = 0; i < consultations_array_size; ++i) {
+            const auto& consultation = consultations_array[i];
             if (consultation.client_inn == inn &&
                 consultation.lawyer_fio.toString() == lawyerFio &&
                 consultation.topic == topic &&
@@ -501,14 +546,32 @@ public:
         return false;
     }
 
-    static const CustomVector<Client>& getClients() { return clients_array; }
-    static const CustomVector<Consultation>& getConsultations() { return consultations_array; }
+    static QVector<Client> getClients() {
+        QVector<Client> result;
+        if (clients_array_size > 0) {
+            result.reserve(clients_array_size);
+            for (int i = 0; i < clients_array_size; ++i) {
+                result.append(clients_array[i]);
+            }
+        }
+        return result;
+    }
+    static QVector<Consultation> getConsultations() {
+        QVector<Consultation> result;
+        if (consultations_array_size > 0) {
+            result.reserve(consultations_array_size);
+            for (int i = 0; i < consultations_array_size; ++i) {
+                result.append(consultations_array[i]);
+            }
+        }
+        return result;
+    }
 
     static const Client* findClientByINN(quint64 inn, int& steps) {
         const Item* foundItem = clients_table.search(inn, steps);
         if (foundItem) {
             int index = foundItem->index;
-            if (index >= 0 && index < clients_array.size()) {
+            if (index >= 0 && index < clients_array_size) {
                 return &clients_array[index];
             }
         }
@@ -520,8 +583,8 @@ public:
         return findClientByINN(inn, dummy_steps);
     }
 
-    static CustomVector<int> findConsultationIndicesByINN(quint64 inn, int& steps) {
-        CustomVector<int> indices;
+    static QVector<int> findConsultationIndicesByINN(quint64 inn, int& steps) {
+        QVector<int> indices;
         TreeNode<quint64>* node = consultations_tree.find(inn, steps);
         if (node) {
             ListNode* current = node->head;
@@ -533,7 +596,7 @@ public:
         return indices;
     }
 
-    static CustomVector<int> findConsultationIndicesByINN(quint64 inn) {
+    static QVector<int> findConsultationIndicesByINN(quint64 inn) {
         int dummy_steps = 0;
         return findConsultationIndicesByINN(inn, dummy_steps);
     }
