@@ -1,16 +1,13 @@
 ﻿#pragma once
 #include <HashTable.h>
 #include <AVLTree.h>
-// #include <CustomVector.h> // Удалено
 
 #include <QString>
-#include <QVector> // Добавлено
 #include <stdexcept>
 #include <QRegularExpression>
 #include <QFile>
 #include <QTextStream>
 #include <QDebug>
-#include <algorithm> // Добавлено для std::sort
 
 struct Date {
     Date() : day(0), month(0), year(0) {}

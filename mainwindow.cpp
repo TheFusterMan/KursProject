@@ -303,7 +303,10 @@ void MainWindow::onDeleteConsultationRecord()
 }
 
 void MainWindow::onLoadClients() {
-    QString fileName = QFileDialog::getOpenFileName(this, "Загрузить справочник клиентов", "", "Текстовые файлы (*.txt);;Все файлы (*.*)");
+    QString fileName = QFileDialog::getOpenFileName(this,
+        "Загрузить справочник клиентов",
+        "",
+        "Файлы клиентов (clients_*.txt)");
 
     if (fileName.isEmpty()) return;
 
@@ -321,7 +324,10 @@ void MainWindow::onLoadClients() {
 
 void MainWindow::onLoadConsultations()
 {
-    QString fileName = QFileDialog::getOpenFileName(this, "Загрузить справочник консультаций", "", "Текстовые файлы (*.txt);;Все файлы (*.*)");
+    QString fileName = QFileDialog::getOpenFileName(this,
+        "Загрузить справочник консультаций",
+        "",
+        "Файлы консультаций (consultations_*.txt)");
 
     if (fileName.isEmpty()) return;
 
@@ -350,7 +356,7 @@ void MainWindow::onSaveClients()
 
     if (dirPath.isEmpty()) return;
 
-    if (DataManager::saveClientsToFile(dirPath + "/clients.txt"))
+    if (DataManager::saveClientsToFile(dirPath + "/clients_output.txt"))
     {
         QMessageBox::information(this, "Успех", "Справочник клиентов успешно сохранен.");
     }
@@ -375,7 +381,7 @@ void MainWindow::onSaveConsultations()
 
     if (dirPath.isEmpty()) return;
 
-    if (DataManager::saveConsultationsToFile(dirPath + "/consultations.txt")) {
+    if (DataManager::saveConsultationsToFile(dirPath + "/consultations_output.txt")) {
         QMessageBox::information(this, "Успех", "Справочник консультаций успешно сохранен.");
     }
     else {
