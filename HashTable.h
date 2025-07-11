@@ -31,7 +31,7 @@ public:
 		table = new Item[capacity];
 	}
 
-	unsigned long long keyToNum(const unsigned long long& key) const {
+	unsigned long long primaryHash(const unsigned long long& key) const {
 		unsigned long long num = 0;
 		unsigned long long temp_key = key;
 
@@ -40,11 +40,6 @@ public:
 			temp_key /= 10;
 		}
 
-		return num;
-	}
-
-	unsigned long long primaryHash(const unsigned long long& key) const {
-		unsigned long long num = keyToNum(key);
 		string sqNumStr = to_string(num * num);
 
 		int len = to_string(capacity - 1).length();
@@ -227,7 +222,14 @@ public:
 		for (int i = 0; i < capacity; ++i) {
 			ss << "[" << i << "]: ";
 
-			unsigned long long hash = keyToNum(table[i].key); //для вывода
+			unsigned long long hash = 0; //для вывода
+			unsigned long long temp_key = hash;
+
+			while (temp_key > 0) {
+				hash += temp_key % 10;
+				temp_key /= 10;
+			}
+
 			string squaredHash = to_string(hash * hash); //хэша
 
 			ss << "Статус: ";

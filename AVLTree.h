@@ -15,7 +15,8 @@ struct TreeNode {
     TreeNode<TKey>* left;
     TreeNode<TKey>* right;
 
-    TreeNode(const TKey& k, int idx) : key(k), balanceFactor(0), left(nullptr), right(nullptr), head(nullptr) {
+    TreeNode(const TKey& k, int idx) : key(k), balanceFactor(0), 
+        left(nullptr), right(nullptr), head(nullptr) {
         indexList.addSorted(head, idx);
     }
 

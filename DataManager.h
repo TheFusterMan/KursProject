@@ -7,7 +7,6 @@
 #include <QRegularExpression>
 #include <QFile>
 #include <QTextStream>
-#include <QDebug>
 
 struct Date {
     Date() : day(0), month(0), year(0) {}
@@ -229,9 +228,6 @@ private:
                                     consultation.topic, consultation.lawyer_fio, consultation.date
                                 };
                             }
-                            else {
-                                qWarning() << "Report data array overflow!";
-                            }
                         }
                     }
                     currentIndexNode = currentIndexNode->next;
@@ -265,9 +261,6 @@ private:
                                 consultation.topic, consultation.lawyer_fio, consultation.date
                             };
                         }
-                        else {
-                            qWarning() << "Report data array overflow!";
-                        }
                     }
                 }
                 currentIndexNode = currentIndexNode->next;
@@ -294,7 +287,6 @@ public:
     {
         QFile file(filename);
         if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            qWarning() << "Не удалось открыть файл с клиентами:" << filename;
             return false;
         }
 
@@ -317,16 +309,11 @@ public:
                     clients_array_size++;
                 }
                 else {
-                    qWarning() << "Превышен лимит клиентов (1000). Дальнейшая загрузка невозможна.";
                     break;
                 }
             }
-            else {
-                qWarning() << "Incorrect line format in clients file:" << line;
-            }
         }
         file.close();
-        qInfo() << "Загружено" << clients_array_size << "клиентов.";
         return true;
     }
 
@@ -360,16 +347,9 @@ public:
                         consultations_array_size++;
                     }
                     else {
-                        qWarning() << "Превышен лимит консультаций (1000). Дальнейшая загрузка невозможна.";
                         break;
                     }
                 }
-                else {
-                    qWarning() << "Не существует клиента с таким ИНН:" << line;
-                }
-            }
-            else {
-                qWarning() << "Некорректный формат строки в файле консультаций:" << line;
             }
         }
         file.close();
@@ -383,7 +363,6 @@ public:
     {
         QFile file(filename);
         if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-            qWarning() << "Не удалось открыть файл для записи:" << filename;
             return false;
         }
         QTextStream out(&file);
@@ -398,7 +377,6 @@ public:
     {
         QFile file(filename);
         if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-            qWarning() << "Не удалось открыть файл для записи консультаций:" << filename;
             return false;
         }
         QTextStream out(&file);
@@ -413,11 +391,9 @@ public:
         if (validator.validateINN(inn) && validator.validateFIO(fio) && validator.validatePhone(phone)) {
             quint64 validINN = inn.toULongLong();
             if (findClientByINN(validINN) != nullptr) {
-                qWarning() << "Клиент с ИНН" << inn << "уже существует.";
                 return false;
             }
             if (clients_array_size >= 1000) {
-                qWarning() << "Невозможно добавить клиента, массив полон.";
                 return false;
             }
             clients_array[clients_array_size] = { validINN, FIO(fio), phone.toULongLong() };
@@ -433,11 +409,9 @@ public:
         if (validator.validateINN(inn) && validator.validateFIO(fio) && validator.validateDate(date)) {
             quint64 validINN = inn.toULongLong();
             if (findClientByINN(validINN) == nullptr) {
-                qWarning() << "Попытка добавить консультацию для несуществующего клиента с ИНН:" << validINN;
                 return false;
             }
             if (consultations_array_size >= 1000) {
-                qWarning() << "Невозможно добавить консультацию, массив полон.";
                 return false;
             }
 
@@ -539,7 +513,6 @@ public:
             }
         }
 
-        qWarning() << "Консультация с указанными параметрами не найдена.";
         return false;
     }
 
