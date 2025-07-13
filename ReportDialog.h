@@ -2,7 +2,6 @@
 
 #include <QDialog>
 
-// Прямые объявления для уменьшения зависимостей в заголовке
 class QLineEdit;
 class QTableWidget;
 class QPushButton;
@@ -21,7 +20,6 @@ private slots:
 private:
     void setupUi();
 
-    // UI elements
     QLineEdit* dateEdit;
     QLineEdit* clientFioEdit;
     QLineEdit* lawyerFioEdit;

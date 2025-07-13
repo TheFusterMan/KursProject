@@ -1,6 +1,5 @@
-﻿#include <iostream> // To interact with users
-#include <string> // Strings are sometimes
-#include <sstream>
+﻿#include <string> //для вывода
+#include <sstream> //для вывода
 
 using namespace std;
 
@@ -84,8 +83,6 @@ public:
 				if (potentialIndex == -1) potentialIndex = probedIndex;
 			}
 			else if (table[probedIndex].status == 1 && table[probedIndex].key == key) {
-				cout << "Warning: int (" << key << ") already exists. Record will not be added." << endl;
-
 				return false;
 			}
 
@@ -105,8 +102,6 @@ public:
 			return true;
 		}
 		else {
-			cout << "Warning: Could not find a slot to add key (" << key << "). Table expansion required.\n";
-			// Can be removed if you really don't want to insert keys
 			resize(true);
 			add(key, index);
 		}
@@ -139,29 +134,6 @@ public:
 		return false;
 	}
 
-	bool updateIndex(const unsigned long long& key, int new_index) {
-		int initIndex = primaryHash(key);
-		int attempt = 0;
-
-		while (attempt < capacity) {
-			int probedIndex = secondaryHash(initIndex, attempt);
-
-			// Если наткнулись на пустую ячейку, значит ключа в таблице нет
-			if (table[probedIndex].status == 0) {
-				return false;
-			}
-
-			// Если нашли ячейку с нужным ключом
-			if (table[probedIndex].status == 1 && table[probedIndex].key == key) {
-				table[probedIndex].index = new_index; // Обновляем индекс
-				return true; // Успех
-			}
-
-			attempt++;
-		}
-
-		return false; // Ключ не найден после полного прохода
-	}
 
 	void resize(bool isExpands) {
 		int oldCapacity = capacity;
@@ -184,9 +156,6 @@ public:
 		capacity = newActualCapacity;
 		size = 0;
 		table = new Item[capacity];
-
-		cout << "Table size changed from " << oldCapacity << " to " << capacity << endl;
-		cout << "Rehashing...\n";
 
 		for (int i = 0; i < oldCapacity; i++) {
 			if (oldTable[i].status == 1) {
@@ -222,15 +191,15 @@ public:
 		for (int i = 0; i < capacity; ++i) {
 			ss << "[" << i << "]: ";
 
-			unsigned long long hash = 0; //для вывода
-			unsigned long long temp_key = hash;
+			unsigned long long hash = 0;
+			unsigned long long temp_key = table[i].key;
 
 			while (temp_key > 0) {
 				hash += temp_key % 10;
 				temp_key /= 10;
 			}
 
-			string squaredHash = to_string(hash * hash); //хэша
+			string squaredHash = to_string(hash * hash);
 
 			ss << "Статус: ";
 			switch (table[i].status) {

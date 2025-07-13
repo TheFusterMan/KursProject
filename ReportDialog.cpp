@@ -1,10 +1,8 @@
 ﻿#include "reportdialog.h"
 #include "datamanager.h" // Уже включает в себя #define MAX_RECORDS
 
-#include <QCheckBox>
-#include <QDateEdit>
-#include <QLineEdit>
-#include <QPushButton>
+#include <QLineEdit> //текстовое поле для редактирования
+#include <QPushButton> //кнопка для нажатия
 #include <QTableWidget>
 #include <QHeaderView>
 #include <QFormLayout>
@@ -12,9 +10,6 @@
 #include <QHBoxLayout>
 #include <QGroupBox>
 #include <QMessageBox>
-#include <QDate>
-#include <QFile>
-#include <QTextStream>
 
 ReportDialog::ReportDialog(QWidget* parent)
     : QDialog(parent)

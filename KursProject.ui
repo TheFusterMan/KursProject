@@ -174,7 +174,8 @@
     <addaction name="actionDeleteClient"/>
     <addaction name="actionDeleteConsultation"/>
     <addaction name="separator"/>
-    <addaction name="action_2"/>
+    <addaction name="actionResizeHT"/>
+    <addaction name="action"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -251,9 +252,14 @@
     <string>О программе</string>
    </property>
   </action>
-  <action name="action_2">
+  <action name="actionResizeHT">
    <property name="text">
     <string>Отладка</string>
+   </property>
+  </action>
+  <action name="action">
+   <property name="text">
+    <string>Изменить размер хеш-таблицы</string>
    </property>
   </action>
  </widget>

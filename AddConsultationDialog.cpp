@@ -1,15 +1,12 @@
 ﻿#include "AddConsultationDialog.h"
-#include <QLabel>
 #include <QLineEdit>
 #include <QFormLayout>
-#include <QVBoxLayout>
 #include <QDialogButtonBox>
 
 AddConsultationDialog::AddConsultationDialog(QWidget* parent) : QDialog(parent)
 {
     setWindowTitle(u8"Добавить консультацию");
 
-    // ИЗМЕНЕНО: Создаем одно поле для ФИО юриста
     fioEdit = new QLineEdit(this);
     innEdit = new QLineEdit(this);
     theameEdit = new QLineEdit(this);
@@ -20,7 +17,6 @@ AddConsultationDialog::AddConsultationDialog(QWidget* parent) : QDialog(parent)
     connect(buttonBox, &QDialogButtonBox::accepted, this, &AddConsultationDialog::accept);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &AddConsultationDialog::reject);
 
-    // ИЗМЕНЕНО: Обновляем форму
     QFormLayout* formLayout = new QFormLayout;
     formLayout->addRow(u8"ФИО юриста:", fioEdit);
     formLayout->addRow(u8"Тема:", theameEdit);
@@ -39,7 +35,6 @@ QString AddConsultationDialog::getINN() const {
 }
 
 QString AddConsultationDialog::getFIO() const {
-    // ИЗМЕНЕНО: Просто возвращаем текст из одного поля
     return fioEdit->text().trimmed();
 }
 

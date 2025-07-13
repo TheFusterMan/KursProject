@@ -1,28 +1,16 @@
 ﻿#include "mainwindow.h"
-#include "ui_KursProject.h" // Убедитесь, что имя файла верное
-#include "datamanager.h"
-#include "addclientdialog.h"
-#include "addconsultationdialog.h"
-#include "deleteclientdialog.h"
-#include "deleteconsultationdialog.h"
-#include "reportdialog.h"
+#include "ui_KursProject.h"
+#include "DataManager.h"
+#include "AddClientDialog.h"
+#include "AddConsultationDialog.h"
+#include "DeleteClientDialog.h"
+#include "DeleteConsultationDialog.h"
+#include "ReportDialog.h"
 
-#include <QHeaderView>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QApplication>
-#include <QToolBar>
-#include <QAction>
-#include <QMenu>
-#include <QMenuBar>
-#include <QMessageBox>
-#include <QInputDialog>
-#include <QFileDialog>
-#include <QIcon>
-#include <QPoint>
-#include <QDebug>
-#include <QDialog>
-#include <QTextEdit>
+#include <QMessageBox> //вывод сообщений
+#include <QInputDialog> //диалог с полями ввода
+#include <QFileDialog> //для диалога файлового ввода-вывода
+#include <QTextEdit> //для окна дебага
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent), ui(new Ui::KursProjectClass)
@@ -49,7 +37,7 @@ MainWindow::MainWindow(QWidget* parent)
     connect(ui->sellersTable, &QTableWidget::customContextMenuRequested, this, &MainWindow::showClientContextMenu);
     connect(ui->salesTable, &QTableWidget::customContextMenuRequested, this, &MainWindow::showConsultationContextMenu);
 
-    connect(ui->action_2, &QAction::triggered, this, &MainWindow::onDebugActionTriggered);
+    connect(ui->actionResizeHT, &QAction::triggered, this, &MainWindow::onDebugActionTriggered);
 
     ui->mainTabWidget->setCurrentIndex(0);
 }
@@ -505,7 +493,6 @@ void MainWindow::onFindConsultations()
         QMessageBox::information(this, "Результат поиска", message);
     }
 }
-
 
 void MainWindow::onGenerateReport()
 {

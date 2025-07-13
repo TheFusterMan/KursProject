@@ -1,8 +1,6 @@
 ﻿#include "DeleteConsultationDialog.h"
-#include <QLabel>
 #include <QLineEdit>
 #include <QFormLayout>
-#include <QVBoxLayout>
 #include <QDialogButtonBox>
 
 DeleteConsultationDialog::DeleteConsultationDialog(QWidget* parent) : QDialog(parent)

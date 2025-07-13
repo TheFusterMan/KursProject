@@ -2,12 +2,8 @@
 #include <HashTable.h>
 #include <AVLTree.h>
 
-#include <QString>
-#include <stdexcept>
-#include <QRegularExpression>
-#include <QFile>
-#include <QTextStream>
-#include <algorithm> // Для std::sort
+#include <QRegularExpression> //для проверок на валидность
+#include <QFile> //файловый ввод-вывод
 
 // Константа для размера массивов
 #define MAX_RECORDS 10000
@@ -171,7 +167,7 @@ static class DataManager {
 private:
     static Validator validator;
 
-public: // Сделаем публичными для прямого доступа, как и требовалось
+public:
     inline static Client clients_array[MAX_RECORDS];
     inline static int clients_array_size = 0;
     inline static HashTable clients_table{ 17 };
@@ -352,7 +348,6 @@ public:
             }
         }
         file.close();
-        qInfo() << "Загружено" << consultations_array_size << "консультаций.";
 
         buildFilterTreeByDate(filter_tree_by_date);
         return true;
@@ -435,7 +430,6 @@ public:
         const Client* clientToDelete = findClientByINN(innToDelete_q64);
 
         if (!clientToDelete) {
-            qInfo() << "Клиент с ИНН" << inn << "не найден. Удаление отменено.";
             return false;
         }
 
@@ -522,8 +516,6 @@ public:
         return false;
     }
 
-    // УДАЛЕНЫ: getClients() и getConsultations()
-
     static const Client* findClientByINN(quint64 inn, int& steps) {
         const Item* foundItem = clients_table.search(inn, steps);
         if (foundItem) {
@@ -540,7 +532,6 @@ public:
         return findClientByINN(inn, dummy_steps);
     }
 
-    // ИЗМЕНЕНО: Функция теперь принимает указатель на массив для результатов и возвращает количество.
     static int findConsultationIndicesByINN(quint64 inn, int* out_indices, int max_size, int& steps) {
         int count = 0;
         TreeNode<quint64>* node = consultations_tree.find(inn, steps);
@@ -551,7 +542,7 @@ public:
                     out_indices[count++] = current->data;
                 }
                 else {
-                    break; // Предотвращение переполнения выходного массива
+                    break;
                 }
                 current = current->next;
             }
@@ -559,7 +550,6 @@ public:
         return count;
     }
 
-    // ИЗМЕНЕНО: Перегруженная версия теперь тоже требует массив для вывода.
     static int findConsultationIndicesByINN(quint64 inn, int* out_indices, int max_size) {
         int dummy_steps = 0;
         return findConsultationIndicesByINN(inn, out_indices, max_size, dummy_steps);
