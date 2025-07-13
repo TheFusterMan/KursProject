@@ -37,7 +37,7 @@ MainWindow::MainWindow(QWidget* parent)
     connect(ui->sellersTable, &QTableWidget::customContextMenuRequested, this, &MainWindow::showClientContextMenu);
     connect(ui->salesTable, &QTableWidget::customContextMenuRequested, this, &MainWindow::showConsultationContextMenu);
 
-    connect(ui->actionResizeHT, &QAction::triggered, this, &MainWindow::onDebugActionTriggered);
+    connect(ui->actionDebug, &QAction::triggered, this, &MainWindow::onDebugActionTriggered);
 
     ui->mainTabWidget->setCurrentIndex(0);
 }

@@ -174,8 +174,7 @@
     <addaction name="actionDeleteClient"/>
     <addaction name="actionDeleteConsultation"/>
     <addaction name="separator"/>
-    <addaction name="actionResizeHT"/>
-    <addaction name="action"/>
+    <addaction name="actionDebug"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -252,7 +251,7 @@
     <string>О программе</string>
    </property>
   </action>
-  <action name="actionResizeHT">
+  <action name="actionDebug">
    <property name="text">
     <string>Отладка</string>
    </property>
