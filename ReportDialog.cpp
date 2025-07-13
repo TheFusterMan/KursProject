@@ -1,5 +1,5 @@
 ﻿#include "reportdialog.h"
-#include "datamanager.h"
+#include "datamanager.h" // Уже включает в себя #define MAX_RECORDS
 
 #include <QCheckBox>
 #include <QDateEdit>
@@ -13,6 +13,8 @@
 #include <QGroupBox>
 #include <QMessageBox>
 #include <QDate>
+#include <QFile>
+#include <QTextStream>
 
 ReportDialog::ReportDialog(QWidget* parent)
     : QDialog(parent)
@@ -88,6 +90,7 @@ void ReportDialog::onGenerateReport()
 
     if (dateText.isEmpty() && criteria.client_fio.isEmpty() && criteria.lawyer_fio.isEmpty()) {
         QMessageBox::information(this, u8"Результат", u8"Не задан ни один критерий.");
+        reportTable->setRowCount(0); // Очищаем таблицу, если критериев нет
         return;
     }
 
@@ -104,19 +107,24 @@ void ReportDialog::onGenerateReport()
         criteria.date.year = 0;
     }
 
-    // ИЗМЕНЕНО: CustomVector заменен на QVector, так как DataManager теперь возвращает его
-    QVector<ReportEntry> reportData = DataManager::generateReport(criteria);
+    // ИЗМЕНЕНО: Используем статический массив вместо QVector
+    static ReportEntry reportDataArray[MAX_RECORDS];
+    // ИЗМЕНЕНО: Вызываем обновленную функцию generateReport
+    int reportSize = DataManager::generateReport(criteria, reportDataArray, MAX_RECORDS);
 
     reportTable->setRowCount(0);
 
-    if (reportData.isEmpty()) {
+    // ИЗМЕНЕНО: Проверяем размер, а не is_empty()
+    if (reportSize == 0) {
         QMessageBox::information(this, u8"Результат", u8"По заданным критериям ничего не найдено.");
         return;
     }
 
     reportTable->setSortingEnabled(false);
 
-    for (const auto& entry : reportData) {
+    // ИЗМЕНЕНО: Используем классический цикл for
+    for (int i = 0; i < reportSize; ++i) {
+        const ReportEntry& entry = reportDataArray[i]; // Для удобства
         int newRow = reportTable->rowCount();
         reportTable->insertRow(newRow);
 

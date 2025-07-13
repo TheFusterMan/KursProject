@@ -1,14 +1,11 @@
 #pragma once
-#ifndef REPORTDIALOG_H
-#define REPORTDIALOG_H
 
 #include <QDialog>
 
-class QCheckBox;
-class QDateEdit;
+// Прямые объявления для уменьшения зависимостей в заголовке
 class QLineEdit;
-class QPushButton;
 class QTableWidget;
+class QPushButton;
 
 class ReportDialog : public QDialog
 {
@@ -24,15 +21,12 @@ private slots:
 private:
     void setupUi();
 
+    // UI elements
     QLineEdit* dateEdit;
     QLineEdit* clientFioEdit;
     QLineEdit* lawyerFioEdit;
-
+    QTableWidget* reportTable;
     QPushButton* generateButton;
     QPushButton* saveButton;
     QPushButton* closeButton;
-
-    QTableWidget* reportTable;
 };
-
-#endif // REPORTDIALOG_H

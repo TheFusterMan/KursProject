@@ -64,9 +64,9 @@ void MainWindow::updateClientsTable()
     ui->sellersTable->setUpdatesEnabled(false);
     ui->sellersTable->setRowCount(0);
 
-    const auto& clients = DataManager::getClients();
-
-    for (const Client& client : clients) {
+    // ИЗМЕНЕНО: Используем прямой доступ к статическому массиву и его размеру
+    for (int i = 0; i < DataManager::clients_array_size; ++i) {
+        const Client& client = DataManager::clients_array[i];
         int newRowIndex = ui->sellersTable->rowCount();
         ui->sellersTable->insertRow(newRowIndex);
 
@@ -83,9 +83,9 @@ void MainWindow::updateConsultationsTable()
     ui->salesTable->setUpdatesEnabled(false);
     ui->salesTable->setRowCount(0);
 
-    const auto& consultations = DataManager::getConsultations();
-
-    for (const Consultation& cons : consultations) {
+    // ИЗМЕНЕНО: Используем прямой доступ к статическому массиву и его размеру
+    for (int i = 0; i < DataManager::consultations_array_size; ++i) {
+        const Consultation& cons = DataManager::consultations_array[i];
         int newRow = ui->salesTable->rowCount();
         ui->salesTable->insertRow(newRow);
 
@@ -149,8 +149,6 @@ void MainWindow::showConsultationContextMenu(const QPoint& pos)
             QMessageBox::Yes | QMessageBox::No);
 
         if (reply == QMessageBox::Yes) {
-            // ИСПРАВЛЕНО: Удаление по индексу строки (row) небезопасно при сортировке.
-            // Вместо этого получаем данные из строки и используем более надежный метод удаления.
             QString inn = ui->salesTable->item(row, 0)->text();
             QString topic = ui->salesTable->item(row, 1)->text();
             QString lawyerFio = ui->salesTable->item(row, 2)->text();
@@ -181,7 +179,7 @@ void MainWindow::onAddClientRecord()
 
         if (DataManager::addClient(INN, FIO, Phone))
         {
-            updateClientsTable(); // Обновляем всю таблицу для корректного отображения
+            updateClientsTable();
             QMessageBox::information(this, "Успех", "Запись успешно добавлена!");
         }
         else
@@ -204,7 +202,7 @@ void MainWindow::onAddConsultationRecord()
 
         if (DataManager::addConsultation(INN, FIO, Theame, Date))
         {
-            updateConsultationsTable(); // Обновляем всю таблицу
+            updateConsultationsTable();
             QMessageBox::information(this, "Успех", "Запись успешно добавлена!");
         }
         else
@@ -286,7 +284,6 @@ void MainWindow::onDeleteConsultationRecord()
     reply = QMessageBox::question(this, "Подтверждение", "Вы уверены, что хотите удалить эту консультацию?",
         QMessageBox::Yes | QMessageBox::No);
     if (reply == QMessageBox::Yes) {
-        // ИСПРАВЛЕНО: та же проблема, что и в контекстном меню. Используем надежный метод.
         QString inn = ui->salesTable->item(row, 0)->text();
         QString topic = ui->salesTable->item(row, 1)->text();
         QString lawyerFio = ui->salesTable->item(row, 2)->text();
@@ -344,7 +341,8 @@ void MainWindow::onLoadConsultations()
 
 void MainWindow::onSaveClients()
 {
-    if (DataManager::getClients().isEmpty()) {
+    // ИЗМЕНЕНО: Проверка размера массива
+    if (DataManager::clients_array_size == 0) {
         QMessageBox::information(this, "Сохранение", "Справочник клиентов пуст. Нечего сохранять.");
         return;
     }
@@ -369,7 +367,8 @@ void MainWindow::onSaveClients()
 
 void MainWindow::onSaveConsultations()
 {
-    if (DataManager::getConsultations().isEmpty()) {
+    // ИЗМЕНЕНО: Проверка размера массива
+    if (DataManager::consultations_array_size == 0) {
         QMessageBox::information(this, "Сохранение", "Справочник консультаций пуст. Нечего сохранять.");
         return;
     }
@@ -462,31 +461,35 @@ void MainWindow::onFindConsultations()
     int steps = 0;
     quint64 innToFind = innStr.toULongLong();
 
-    // ИЗМЕНЕНО: CustomVector заменен на QVector
-    QVector<int> indices = DataManager::findConsultationIndicesByINN(innToFind, steps);
-    const auto& allConsultations = DataManager::getConsultations();
+    // ИЗМЕНЕНО: Используем статический массив для получения индексов
+    int indices[MAX_RECORDS];
+    int numIndices = DataManager::findConsultationIndicesByINN(innToFind, indices, MAX_RECORDS, steps);
 
-    if (!indices.isEmpty()) {
+
+    if (numIndices > 0) {
         QString resultMessage = QString("Найдено %1 консультаций за %2 шаг(ов):\n\n")
-            .arg(indices.size())
+            .arg(numIndices)
             .arg(steps);
 
         ui->salesTable->clearSelection();
 
-        for (int index : indices) {
-            if (index >= 0 && index < allConsultations.size()) {
-                const Consultation& cons = allConsultations.at(index);
+        // ИЗМЕНЕНО: Классический цикл for вместо for-each
+        for (int i = 0; i < numIndices; ++i) {
+            int index = indices[i];
+            if (index >= 0 && index < DataManager::consultations_array_size) {
+                // ИЗМЕНЕНО: Прямой доступ к массиву консультаций
+                const Consultation& cons = DataManager::consultations_array[index];
                 resultMessage += QString("Тема: %1\nЮрист: %2\nДата: %3\n\n")
                     .arg(cons.topic)
                     .arg(cons.lawyer_fio.toString())
                     .arg(cons.date.toString());
 
-                for (int i = 0; i < ui->salesTable->rowCount(); ++i) {
-                    if (ui->salesTable->item(i, 0)->text() == innStr &&
-                        ui->salesTable->item(i, 1)->text() == cons.topic &&
-                        ui->salesTable->item(i, 3)->text() == cons.date.toString())
+                for (int j = 0; j < ui->salesTable->rowCount(); ++j) {
+                    if (ui->salesTable->item(j, 0)->text() == innStr &&
+                        ui->salesTable->item(j, 1)->text() == cons.topic &&
+                        ui->salesTable->item(j, 3)->text() == cons.date.toString())
                     {
-                        ui->salesTable->selectRow(i);
+                        ui->salesTable->selectRow(j);
                     }
                 }
             }
@@ -503,8 +506,11 @@ void MainWindow::onFindConsultations()
     }
 }
 
+
 void MainWindow::onGenerateReport()
 {
+    // Эта функция должна ТОЛЬКО создавать и показывать диалог.
+    // Вся логика генерации отчета находится внутри самого ReportDialog.
     ReportDialog dialog(this);
     dialog.exec();
 }

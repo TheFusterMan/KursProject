@@ -7,6 +7,10 @@
 #include <QRegularExpression>
 #include <QFile>
 #include <QTextStream>
+#include <algorithm> // Для std::sort
+
+// Константа для размера массивов
+#define MAX_RECORDS 10000
 
 struct Date {
     Date() : day(0), month(0), year(0) {}
@@ -167,17 +171,18 @@ static class DataManager {
 private:
     static Validator validator;
 
-    inline static Client clients_array[1000];
+public: // Сделаем публичными для прямого доступа, как и требовалось
+    inline static Client clients_array[MAX_RECORDS];
     inline static int clients_array_size = 0;
     inline static HashTable clients_table{ 17 };
 
-    inline static Consultation consultations_array[1000];
+    inline static Consultation consultations_array[MAX_RECORDS];
     inline static int consultations_array_size = 0;
     inline static AVLTree<quint64> consultations_tree;
 
     inline static AVLTree<Date> filter_tree_by_date;
 
-
+private:
     static void buildFilterTreeByDate(AVLTree<Date>& filter_tree) {
         filter_tree.freeTree(filter_tree.root);
         filter_tree.root = nullptr;
@@ -189,7 +194,7 @@ private:
     }
 
 
-    static void traverseForReport(TreeNode<Date>* node, const FilterCriteria& criteria, ReportEntry* reportData, int& reportDataSize) {
+    static void traverseForReport(TreeNode<Date>* node, const FilterCriteria& criteria, ReportEntry* reportData, int& reportDataSize, int maxReportSize) {
         if (!node) {
             return;
         }
@@ -198,10 +203,10 @@ private:
 
         if (dateFilterActive) {
             if (criteria.date < node->key) {
-                traverseForReport(node->left, criteria, reportData, reportDataSize);
+                traverseForReport(node->left, criteria, reportData, reportDataSize, maxReportSize);
             }
             else if (criteria.date > node->key) {
-                traverseForReport(node->right, criteria, reportData, reportDataSize);
+                traverseForReport(node->right, criteria, reportData, reportDataSize, maxReportSize);
             }
             else {
                 ListNode* currentIndexNode = node->head;
@@ -222,7 +227,7 @@ private:
                             (QString::compare(consultation.lawyer_fio.toString(), criteria.lawyer_fio, Qt::CaseInsensitive) == 0);
 
                         if (clientFioMatch && lawyerFioMatch) {
-                            if (reportDataSize < 1000) {
+                            if (reportDataSize < maxReportSize) {
                                 reportData[reportDataSize++] = {
                                     client->inn, client->fio, client->phone,
                                     consultation.topic, consultation.lawyer_fio, consultation.date
@@ -235,7 +240,7 @@ private:
             }
         }
         else {
-            traverseForReport(node->left, criteria, reportData, reportDataSize);
+            traverseForReport(node->left, criteria, reportData, reportDataSize, maxReportSize);
 
             ListNode* currentIndexNode = node->head;
             while (currentIndexNode) {
@@ -255,7 +260,7 @@ private:
                         (QString::compare(consultation.lawyer_fio.toString(), criteria.lawyer_fio, Qt::CaseInsensitive) == 0);
 
                     if (clientFioMatch && lawyerFioMatch) {
-                        if (reportDataSize < 1000) {
+                        if (reportDataSize < maxReportSize) {
                             reportData[reportDataSize++] = {
                                 client->inn, client->fio, client->phone,
                                 consultation.topic, consultation.lawyer_fio, consultation.date
@@ -266,21 +271,15 @@ private:
                 currentIndexNode = currentIndexNode->next;
             }
 
-            traverseForReport(node->right, criteria, reportData, reportDataSize);
+            traverseForReport(node->right, criteria, reportData, reportDataSize, maxReportSize);
         }
     }
 public:
-    static QVector<ReportEntry> generateReport(const FilterCriteria& criteria) {
-        ReportEntry reportDataArray[1000];
+    // ИЗМЕНЕНО: Функция теперь принимает указатель на массив для результатов и возвращает количество записей.
+    static int generateReport(const FilterCriteria& criteria, ReportEntry* reportDataArray, int maxReportSize) {
         int reportDataSize = 0;
-        traverseForReport(filter_tree_by_date.root, criteria, reportDataArray, reportDataSize);
-
-        QVector<ReportEntry> result;
-        result.reserve(reportDataSize);
-        for (int i = 0; i < reportDataSize; ++i) {
-            result.append(reportDataArray[i]);
-        }
-        return result;
+        traverseForReport(filter_tree_by_date.root, criteria, reportDataArray, reportDataSize, maxReportSize);
+        return reportDataSize;
     }
 
     static bool loadClientsFromFile(const QString& filename)
@@ -303,7 +302,7 @@ public:
                 client.phone = parts[2].trimmed().toULongLong();
                 client.fio = FIO(parts[1].trimmed());
 
-                if (clients_array_size < 1000) {
+                if (clients_array_size < MAX_RECORDS) {
                     clients_array[clients_array_size] = client;
                     clients_table.add(client.inn, clients_array_size);
                     clients_array_size++;
@@ -341,7 +340,7 @@ public:
                 consultation.date = Date(parts[3].trimmed());
 
                 if (findClientByINN(consultation.client_inn) != nullptr) {
-                    if (consultations_array_size < 1000) {
+                    if (consultations_array_size < MAX_RECORDS) {
                         consultations_array[consultations_array_size] = consultation;
                         consultations_tree.add(consultation.client_inn, consultations_array_size);
                         consultations_array_size++;
@@ -393,7 +392,7 @@ public:
             if (findClientByINN(validINN) != nullptr) {
                 return false;
             }
-            if (clients_array_size >= 1000) {
+            if (clients_array_size >= MAX_RECORDS) {
                 return false;
             }
             clients_array[clients_array_size] = { validINN, FIO(fio), phone.toULongLong() };
@@ -411,7 +410,7 @@ public:
             if (findClientByINN(validINN) == nullptr) {
                 return false;
             }
-            if (consultations_array_size >= 1000) {
+            if (consultations_array_size >= MAX_RECORDS) {
                 return false;
             }
 
@@ -440,25 +439,32 @@ public:
             return false;
         }
 
-        QVector<int> indicesToDelete = findConsultationIndicesByINN(innToDelete_q64);
-        std::sort(indicesToDelete.rbegin(), indicesToDelete.rend());
-        for (int index : indicesToDelete) {
-            deleteConsultation(index);
+        // ИЗМЕНЕНО: Используем статический массив вместо QVector
+        int indicesToDelete[MAX_RECORDS];
+        int numIndicesToDelete = findConsultationIndicesByINN(innToDelete_q64, indicesToDelete, MAX_RECORDS);
+
+        // ИЗМЕНЕНО: Сортировка массива с помощью std::sort
+        std::sort(indicesToDelete, indicesToDelete + numIndicesToDelete, std::greater<int>());
+
+        for (int i = 0; i < numIndicesToDelete; ++i) {
+            deleteConsultation(indicesToDelete[i]);
         }
 
         int indexToDeleteInClients = clientToDelete - &clients_array[0];
         int lastClientIndex = clients_array_size - 1;
+
+        clients_table.remove(innToDelete_q64);
+
         if (indexToDeleteInClients < lastClientIndex) {
             const Client& lastClient = clients_array[lastClientIndex];
             clients_array[indexToDeleteInClients] = lastClient;
-            clients_table.updateIndex(lastClient.inn, indexToDeleteInClients);
+            clients_table.remove(lastClient.inn);
+            clients_table.add(lastClient.inn, indexToDeleteInClients);
         }
-        clients_table.remove(innToDelete_q64);
         if (clients_array_size > 0) {
             clients_array_size--;
         }
 
-        qInfo() << "Клиент с ИНН" << inn << "и все его консультации успешно удалены.";
         return true;
     }
 
@@ -516,26 +522,7 @@ public:
         return false;
     }
 
-    static QVector<Client> getClients() {
-        QVector<Client> result;
-        if (clients_array_size > 0) {
-            result.reserve(clients_array_size);
-            for (int i = 0; i < clients_array_size; ++i) {
-                result.append(clients_array[i]);
-            }
-        }
-        return result;
-    }
-    static QVector<Consultation> getConsultations() {
-        QVector<Consultation> result;
-        if (consultations_array_size > 0) {
-            result.reserve(consultations_array_size);
-            for (int i = 0; i < consultations_array_size; ++i) {
-                result.append(consultations_array[i]);
-            }
-        }
-        return result;
-    }
+    // УДАЛЕНЫ: getClients() и getConsultations()
 
     static const Client* findClientByINN(quint64 inn, int& steps) {
         const Item* foundItem = clients_table.search(inn, steps);
@@ -553,22 +540,29 @@ public:
         return findClientByINN(inn, dummy_steps);
     }
 
-    static QVector<int> findConsultationIndicesByINN(quint64 inn, int& steps) {
-        QVector<int> indices;
+    // ИЗМЕНЕНО: Функция теперь принимает указатель на массив для результатов и возвращает количество.
+    static int findConsultationIndicesByINN(quint64 inn, int* out_indices, int max_size, int& steps) {
+        int count = 0;
         TreeNode<quint64>* node = consultations_tree.find(inn, steps);
         if (node) {
             ListNode* current = node->head;
             while (current) {
-                indices.append(current->data);
+                if (count < max_size) {
+                    out_indices[count++] = current->data;
+                }
+                else {
+                    break; // Предотвращение переполнения выходного массива
+                }
                 current = current->next;
             }
         }
-        return indices;
+        return count;
     }
 
-    static QVector<int> findConsultationIndicesByINN(quint64 inn) {
+    // ИЗМЕНЕНО: Перегруженная версия теперь тоже требует массив для вывода.
+    static int findConsultationIndicesByINN(quint64 inn, int* out_indices, int max_size) {
         int dummy_steps = 0;
-        return findConsultationIndicesByINN(inn, dummy_steps);
+        return findConsultationIndicesByINN(inn, out_indices, max_size, dummy_steps);
     }
 
     static QString getClientsTableState() { return QString::fromStdString(clients_table.toString()); }
